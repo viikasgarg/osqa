@@ -2,7 +2,7 @@
 import os.path
 import sys
 
-DEBUG = True
+DEBUG = False
 
 TEMPLATE_DEBUG = DEBUG
 SITE_ID = 1
@@ -70,8 +70,10 @@ MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 
 # User settings
 
-from settings_local import *
-
+try:
+    from settings_local import *
+except:
+    pass
 template_loaders = (
     'django.template.loaders.filesystem.Loader',
     'django.template.loaders.app_directories.Loader',
