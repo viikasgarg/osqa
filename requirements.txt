@@ -8,4 +8,5 @@ django-debug-toolbar
 django-endless-pagination
 pytz
 dj_database_url
+psycopg2==2.5.3
 
