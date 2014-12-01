@@ -109,7 +109,7 @@ INTERNAL_IPS = ('127.0.0.1',)
 
 CACHE_BACKEND = 'file://%s' % os.path.join(os.path.dirname(__file__),'cache').replace('\\','/')
 #CACHE_BACKEND = 'dummy://'
-SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+#SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 
 
 # This should be equal to your domain name, plus the web application context.
