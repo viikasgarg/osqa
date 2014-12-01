@@ -2,7 +2,7 @@
 import os.path
 import sys
 
-DEBUG = False
+DEBUG = True
 
 TEMPLATE_DEBUG = DEBUG
 SITE_ID = 1
@@ -38,7 +38,7 @@ TEMPLATE_CONTEXT_PROCESSORS = [
 
 DATABASES = {}
 # Parse database configuration from $DATABASE_URL
-if not DEBUG:
+if True:#not DEBUG:
     import dj_database_url
     DATABASES['default'] =  dj_database_url.config()
 
