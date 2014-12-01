@@ -39,8 +39,11 @@ TEMPLATE_CONTEXT_PROCESSORS = [
 DATABASES = {}
 # Parse database configuration from $DATABASE_URL
 if True:#not DEBUG:
-    import dj_database_url
-    DATABASES['default'] =  dj_database_url.config()
+    try:
+        import dj_database_url
+        DATABASES['default'] =  dj_database_url.config()
+    except:
+        pass
 
 
 ROOT_URLCONF = 'urls'
@@ -147,6 +150,20 @@ template_loaders = (
     'forum.modules.template_loader.module_templates_loader',
     'forum.skins.load_template_source',
 )
+
+INSTALLED_APPS = [
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.sites',
+    'django.contrib.admin',
+    'django.contrib.humanize',
+    'django.contrib.sitemaps',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'forum',
+]
+
 TEMPLATE_LOADERS = list(template_loaders) if DEBUG else [ ('django.template.loaders.cached.Loader', template_loaders) ]
 
 try:
@@ -190,18 +207,7 @@ MODULE_LIST = filter(lambda m: getattr(m, 'CAN_USE', True), [
                           ) for m in MODULE_LIST]
 
 
-INSTALLED_APPS = [
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.sites',
-    'django.contrib.admin',
-    'django.contrib.humanize',
-    'django.contrib.sitemaps',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'forum',
-]
+
 
 
 
