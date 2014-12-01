@@ -73,6 +73,7 @@ MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 import os.path
 
 SITE_SRC_ROOT = os.path.dirname(__file__)
+'''
 LOG_FILENAME = 'django.osqa.log'
 
 
@@ -103,7 +104,7 @@ LOGGING = {
         'level': 'ERROR',
     },
 }
-
+'''
 #ADMINS and MANAGERS
 ADMINS = ("viikasgarg@gmail.com")
 MANAGERS = ADMINS
