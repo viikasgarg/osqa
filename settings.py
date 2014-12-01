@@ -37,6 +37,10 @@ TEMPLATE_CONTEXT_PROCESSORS = [
 
 
 DATABASES = {}
+# Parse database configuration from $DATABASE_URL
+if not DEBUG:
+    import dj_database_url
+    DATABASES['default'] =  dj_database_url.config()
 
 
 ROOT_URLCONF = 'urls'
@@ -109,7 +113,7 @@ INTERNAL_IPS = ('127.0.0.1',)
 
 CACHE_BACKEND = 'file://%s' % os.path.join(os.path.dirname(__file__),'cache').replace('\\','/')
 #CACHE_BACKEND = 'dummy://'
-#SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 
 
 # This should be equal to your domain name, plus the web application context.
@@ -229,8 +233,5 @@ if not DEBUG:
 
 AUTHENTICATION_BACKENDS = ['django.contrib.auth.backends.ModelBackend',]
 
-# Parse database configuration from $DATABASE_URL
-if not DEBUG:
-    import dj_database_url
-    DATABASES['default'] =  dj_database_url.config()
+
 
