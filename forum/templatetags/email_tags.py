@@ -19,7 +19,7 @@ class MultiUserMailMessage(template.Node):
             context['recipient'] = recipient
             self.nodelist.render(context)
             messages.append((recipient, context['subject'], context['htmlcontent'], context['textcontent'], context['embeddedmedia']))
-        
+
         create_and_send_mail_messages(messages, sender_data=context['sender'], reply_to=context['reply_to'])
 
 @register.tag
@@ -64,7 +64,7 @@ def content(parser, token):
         if len(content):
             index = content[0]
             nodelist = template.NodeList(basenodes[0:index] + nodelist + basenodes[index:])
-        
+
 
     parser.delete_first_token()
     return EmailPartNode(nodelist, tag_name)
@@ -107,12 +107,3 @@ class FullUrlNode(template.Node):
 def fullurl(parser, token):
     default_node = default_url(parser, token)
     return FullUrlNode(default_node)
-
-
-
-
-
-    
-    
-
-
