@@ -237,4 +237,8 @@ if not DEBUG:
 
 AUTHENTICATION_BACKENDS = ['django.contrib.auth.backends.ModelBackend',]
 
+# Parse database configuration from $DATABASE_URL
+if not DEBUG:
+    import dj_database_url
+    DATABASES['default'] =  dj_database_url.config()
 
