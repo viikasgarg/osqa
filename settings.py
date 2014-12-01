@@ -2,6 +2,9 @@
 import os.path
 import sys
 
+DEBUG = True
+
+TEMPLATE_DEBUG = DEBUG
 SITE_ID = 1
 
 SECRET_KEY = 'a;::qCl1mfh?avagttOJ;8f5Rr54d,9qy7;o15M2cYO75?OQo51u3LnQ;!8N.:,7'
@@ -32,6 +35,19 @@ TEMPLATE_CONTEXT_PROCESSORS = [
     'django.contrib.auth.context_processors.auth',
 ]
 
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'osqa',
+        'USER': 'vikas',
+        'PASSWORD': 'garg88',
+        'HOST': '',
+        'PORT': '',
+        'CONN_MAX_AGE': 600,
+    }
+}
+
 ROOT_URLCONF = 'urls'
 APPEND_SLASH = True
 
@@ -53,6 +69,7 @@ SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
 MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 
 # User settings
+
 from settings_local import *
 
 template_loaders = (
@@ -113,6 +130,7 @@ INSTALLED_APPS = [
     'django.contrib.humanize',
     'django.contrib.sitemaps',
     'django.contrib.messages',
+    'django.contrib.staticfiles',
     'forum',
 ]
 
@@ -145,3 +163,5 @@ if not DEBUG:
         pass
 
 AUTHENTICATION_BACKENDS = ['django.contrib.auth.backends.ModelBackend',]
+
+

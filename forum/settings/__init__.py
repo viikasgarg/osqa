@@ -4,13 +4,13 @@ from base import Setting, SettingSet, BaseSetting
 from django.forms.widgets import Textarea
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings as djsettings
-from django.utils.version import get_git_changeset
+#from django.utils.version import get_git_changeset
 
 from forum.modules import get_modules_script_implementations
 
 OSQA_VERSION = "Development Build"
 
-VCS_REVISION = get_git_changeset()
+VCS_REVISION = 1.0 #get_git_changeset()
 
 # We'll have to keep in mind this variable on every release.
 if VCS_REVISION == u'SVN-unknown':

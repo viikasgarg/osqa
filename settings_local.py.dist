@@ -45,10 +45,10 @@ ALLOWED_HOSTS = ('yourhostname.com',)
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
+        'ENGINE': 'django.db.backends.postgres',
         'NAME': 'osqa',
-        'USER': 'root',
-        'PASSWORD': '',
+        'USER': 'vikas',
+        'PASSWORD': 'garg88',
         'HOST': '',
         'PORT': '',
         'CONN_MAX_AGE': 600,
