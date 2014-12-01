@@ -36,17 +36,8 @@ TEMPLATE_CONTEXT_PROCESSORS = [
 ]
 
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'osqa',
-        'USER': 'vikas',
-        'PASSWORD': 'garg88',
-        'HOST': '',
-        'PORT': '',
-        'CONN_MAX_AGE': 600,
-    }
-}
+DATABASES = {}
+
 
 ROOT_URLCONF = 'urls'
 APPEND_SLASH = True
@@ -139,6 +130,7 @@ OSQA_DEFAULT_SKIN = 'default'
 DISABLED_MODULES = ['books', 'recaptcha', 'project_badges','mysqlfulltext']
 
 STATIC_URL = '/static/'
+STATIC_ROOT = 'staticfiles'
 
 try:
     from settings_local import *
