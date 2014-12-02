@@ -1,10 +1,20 @@
 {% spaceless %}
-    {% if title %}<h1>{{ title }}</h1>{% endif %}
-    <div class="text">{{ html }}</div>
-    {% if tags %}
+    {% if title %}<b> Question Title:</b>{{ title }}{% endif %}
+    <div class="tags"> <b>Category Name: </b>{{ category }}</div>
+    <br><b>Details :</b> <div class="text">{{ html }}</div>
+          {% if tags %}
         <div class="tags">
             {% for tag in tags %}
             <a class="post-tag tag-link-{{ tag }}">{{ tag }}</a>
+            {% endfor %}
+        </div>
+    {% endif %}
+  
+    {% if recipients %}
+        <div class="tags">
+        <b> Additional Recipients:</b>
+            {% for recipient in recipients %}
+            <a class="post-tag tag-link-{{ tag }}">{{ recipient }}</a>
             {% endfor %}
         </div>
     {% endif %}

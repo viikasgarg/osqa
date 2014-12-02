@@ -8,19 +8,19 @@
                     <td><span class="num">{{ question.answer_count|intcomma }}</span> </td>
                     <td><span class="num">{{ question.score|intcomma }}</span> </td>
                     <td><span class="num">{{ question.view_count|decorated_int|safe }}</span> </td>
-                </tr>  
+                </tr>
                 <tr>
                     <td><span class="unit">{% trans "answers" %}</span></td>
                     <td><span class="unit">{% trans "votes" %}</span></td>
                     <td><span class="unit">{% trans "views" %}</span></td>
-                </tr> 
+                </tr>
             </table>
         </div>
-        
+
         <div class="summary">
-            {{ question.summary }}...                
+            {{ question.summary }}...
         </div>
-        
+
         {% ifequal tab_id 'active'%}
         {% if question.wiki and settings.WIKI_ON %}
         <span class="from wiki">{% trans "community wiki" %}</span>
@@ -46,10 +46,10 @@
         </div>
         {% endif %}
         {% endifequal %}
-        
+
         <div class="tags">
         {% for tag in question.tagname_list %}
-        <a class="tag-link-{{ tag }}" href="{% url "tag_questions" tag|urlencode %}" title="{% trans "see questions tagged" %}'{{ tag }}'{% trans "using tags" %}" rel="tag">{{ tag }}</a>
+        <a class="tag-link-{{ tag }}" href="{% url 'tag_questions' tag|urlencode %}" title="{% trans "see questions tagged" %}'{{ tag }}'{% trans "using tags" %}" rel="tag">{{ tag }}</a>
         {% endfor %}
         </div>
     </div>

@@ -2,7 +2,7 @@
 import os.path
 
 import datetime
-
+import time
 from django.core.urlresolvers import reverse
 from django.core.files.storage import FileSystemStorage
 from django.views.decorators.csrf import csrf_exempt
@@ -19,6 +19,7 @@ from forum.forms import *
 from forum.models import *
 from forum.utils import html
 from forum.http_responses import HttpResponseUnauthorized
+from django.utils.safestring import mark_safe
 
 from vars import PENDING_SUBMISSION_SESSION_ATTR
 
@@ -70,10 +71,84 @@ def upload(request):#ajax upload file to a question or answer
 
     return HttpResponse(result, mimetype="application/xml")
 
-def ask(request):
-    form = None
+@csrf_exempt
+def upload_attachments(request):
+    class FileTypeNotAllow(Exception):
+        pass
+    class FileSizeNotAllow(Exception):
+        pass
 
+    result = '{"status" : "%s","message":"%s","filename":"%s","filesize":"%s"}'
+    new_file_name = ''
+    size = 0
+    try:
+        token = request.POST.get('token','default')
+        f = request.FILES.get('upload_files')
+        # check upload permission
+        if not request.user.can_upload_files():
+            raise UploadPermissionNotAuthorized()
+
+        # check file type
+        try:
+            file_name_suffix = os.path.splitext(f.name)[1].lower()
+        except KeyError:
+            raise FileTypeNotAllow()
+
+        if file_name_suffix in ('.exe','.bat','.sh'):
+            raise FileTypeNotAllow()
+
+        storage = FileSystemStorage(os.path.join(settings.UPFILES_ATTACH_FOLDER,token), str(settings.UPFILES_ATTACH_ALIAS))
+        new_file_name = storage.save("_".join(f.name.split()), f)
+        # check file size
+        # byte
+        size = storage.size(new_file_name)
+
+        if size > float(settings.ALLOW_ATTACH_MAX_FILE_SIZE) * 1024 * 1024:
+            storage.delete(new_file_name)
+            raise FileSizeNotAllow()
+
+        Attachment(name=new_file_name, folder_name=token, size=size).save()
+
+        result = result % (('upload'),_('File Uploaded'),new_file_name,size)
+    except FileTypeNotAllow:
+        result = result % (('error'),_("Non allowed file types are '.exe','.bat','.sh'"),new_file_name,size)
+    except FileSizeNotAllow:
+        result = result % (('error'),_("Maximum upload file size is %sM") % settings.ALLOW_ATTACH_MAX_FILE_SIZE,new_file_name,size)
+    except Exception, e:
+        result = result % (('error'),_('Error uploading file. Please contact the site administrator. Thank you. %s' % e),new_file_name,size)
+
+    return HttpResponse(result, mimetype="text/plain")
+
+
+@csrf_exempt
+def delete_attachments(request):
+    result = '{"status" : "%s","message":"%s","filename":"%s"}'
+
+    try:
+        token = request.POST.get('token','default')
+        file_name = request.POST.get('fileNames')
+        folder_name = os.path.join(settings.UPFILES_ATTACH_FOLDER,token) 
+        storage = FileSystemStorage(folder_name, str(settings.UPFILES_ATTACH_ALIAS))
+        #new_file_name = storage.save("_".join(f.split()), f)
+
+        storage.delete(file_name)
+        if os.path.isdir(folder_name):
+            if len(os.listdir(folder_name)) == 0:
+                os.rmdir(folder_name)
+        attachment = Attachment.objects.filter(folder_name=token,name=file_name)
+        if len(attachment) != 0:
+            attachment.delete()
+        result = result % (('delete'),_('File Deleted'),file_name)
+    except:
+        result = result % (('error'),_('Error on Server Side'),file_name)
+
+    return HttpResponse(result, mimetype="text/plain")
+
+def ask(request,category):
+    form = None
+    folder_name = None
     if request.POST:
+        folder_name = request.POST.get('attachement_token')
         if request.session.pop('reviewing_pending_data', False):
             form = AskForm(initial=request.POST, user=request.user)
         elif "text" in request.POST:
@@ -82,7 +157,10 @@ def ask(request):
                 if request.user.is_authenticated() and request.user.email_valid_and_can_ask():
                     ask_action = AskAction(user=request.user, ip=request.META['REMOTE_ADDR']).save(data=form.cleaned_data)
                     question = ask_action.node
+                    #folder_name = int(form.cleaned_data['attachement_token'])
+                    Attachment.objects.filter(folder_name = folder_name).update(node = question)
 
+                    messages.add_message(request, messages.INFO, message=ask_action.describe(request.user))
                     if settings.WIKI_ON and request.POST.get('wiki', False):
                         question.nstate.wiki = ask_action
 
@@ -108,10 +186,25 @@ def ask(request):
             
     if not form:
         form = AskForm(user=request.user)
+        form.fields['defaultrecipients'].widget.attrs['style'] = "width:53%;display:block"
+        form.fields['defaultrecipients'].widget.attrs['readonly'] = "readonly"
 
+    upload_template = ""
+    upload_file_template = "{name:'%s',size:%s,extension:'%s'},"
+    if not folder_name:
+        folder_name = form.fields['attachement_token'].initial
+
+    attachments = Attachment.objects.filter(folder_name=folder_name)
+    for attachment in attachments:
+        if len(attachment.name):
+            upload_template += upload_file_template%(attachment.name,attachment.size,"."+attachment.name.split('.')[-1])
+    upload_template  = "[" + upload_template[:-1] + "]"
+    
     return render_to_response('ask.html', {
         'form' : form,
-        'tab' : 'ask'
+        'tab' : 'ask',
+        'uploaded_files':mark_safe(upload_template),
+        #'notice':category.notice,
         }, context_instance=RequestContext(request))
 
 def convert_to_question(request, id):
@@ -171,6 +264,8 @@ def _edit_question(request, question, template='question_edit.html', summary='',
             form = EditQuestionForm(question, request.user, revision, data=request.POST)
 
         if not 'select_revision' in request.POST and form.is_valid():
+            folder_name = int(form.cleaned_data['attachement_token'])
+            Attachment.objects.filter(folder_name = folder_name).update(node = question)
             if form.has_changed():
                 action = action_class(user=request.user, node=question, ip=request.META['REMOTE_ADDR']).save(data=form.cleaned_data)
 
@@ -191,10 +286,21 @@ def _edit_question(request, question, template='question_edit.html', summary='',
         revision_form = RevisionForm(question)
         form = EditQuestionForm(question, request.user, initial={'summary': summary})
 
+    folder_name  = form.fields['attachement_token'].initial
+
+    upload_template = ""
+    upload_file_template = "{name:'%s',size:%s,extension:'%s'},"
+    attachments = Attachment.objects.filter(folder_name=folder_name)
+    for attachment in attachments:
+        if len(attachment.name):
+            upload_template += upload_file_template%(attachment.name,attachment.size,"."+attachment.name.split('.')[-1])
+    upload_template  = "[" + upload_template[:-1] + "]"
+
     context = {
         'question': question,
         'revision_form': revision_form,
         'form' : form,
+        'uploaded_files':mark_safe(upload_template),
     }
 
     if not (additional_context is None):
@@ -257,7 +363,7 @@ def answer(request, id):
         if request.user.is_authenticated() and request.user.email_valid_and_can_answer():
             answer_action = AnswerAction(user=request.user, ip=request.META['REMOTE_ADDR']).save(dict(question=question, **form.cleaned_data))
             answer = answer_action.node
-
+            messages.add_message(request, messages.INFO, message=answer_action.describe(request.user))
             if settings.WIKI_ON and request.POST.get('wiki', False):
                 answer.nstate.wiki = answer_action
 

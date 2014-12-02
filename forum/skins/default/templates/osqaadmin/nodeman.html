@@ -21,7 +21,7 @@
                     $('#type-filter-container').find('input[value=' + link_type + ']').remove();
                 }
 
-                $form.submit();                
+                $form.submit();
             });
 
             $('#all-state-link').click(function() {
@@ -64,7 +64,8 @@
                 }
             });
 
-            $('#author-selector').autocomplete('{% url "matching_users" %}', {
+            $('#author-selector').autocomplete( {
+                source:'{% url "matching_users" %}',
                 minChars: 1,
                 matchContains: true,
                 max: 10,
@@ -93,7 +94,8 @@
                 }
             });
 
-            $('#tag-selector').autocomplete('{% url "matching_tags" %}', {
+            $('#tag-selector').autocomplete( {
+                source:'{% url "matching_tags" %}',
                 minChars: 1,
                 matchContains: true,
                 max: 10,
@@ -118,6 +120,37 @@
                 var id = $(this).attr('rel');
                 if ($('#tag-filter-container').find('input[value=' + id + ']').length > 0) {
                     $('#tag-filter-container').find('input[value=' + id + ']').remove();
+                    $form.submit();
+                }
+            });
+
+            $('#category-selector').autocomplete({
+                source:'{% url "matching_categories" %}',
+                minChars: 1,
+                matchContains: true,
+                max: 10,
+
+                formatItem: function(row, i, max, value) {
+                    return row[1] + '( id:' + row[0] + ' )';
+                },
+
+                formatResult: function(row, i, max, value){
+                    return row[1];
+                }
+            });
+
+            $('#category-selector').result(function(event, data, formatted) {
+                if ($('#category-filter-container').find('input[value=' + data[0] + ']').length == 0) {
+                    $('#category-filter-container').append($("<input name=\"categories\" type=\"hidden\" value=\"" + data[0] + "\" />"));
+                    $form.submit();
+                }
+            });
+
+
+            $('.category-filter-remover').click(function() {
+                var id = $(this).attr('rel');
+                if ($('#category-filter-container').find('input[value=' + id + ']').length > 0) {
+                    $('#category-filter-container').find('input[value=' + id + ']').remove();
                     $form.submit();
                 }
             });
@@ -171,7 +204,7 @@
                 $('#state-filter-type-hidden').val($(this).val());
                 $form.submit();
             });
-            
+
             $('#reset-text-filter').click(function() {
                 $('#text-filter-input').val('');
                 $form.submit();
@@ -251,7 +284,7 @@
           return value;
         }
     }
-    
+
     </script>
     <script type="text/javascript" src="{% static 'admin/js/core.js' %}"></script>
 {% endblock %}
@@ -306,6 +339,11 @@
             <div style="display: none;" id="tag-filter-container">
                 {% for t in tags %}
                 <input name="tags" type="hidden" value="{{ t.id }}" />
+                {% endfor %}
+            </div>
+            <div style="display: none;" id="category-filter-container">
+                {% for t in categories %}
+                <input name="categories" type="hidden" value="{{ t.id }}" />
                 {% endfor %}
             </div>
             <div id="type-filter-container" style="display: none;">
@@ -383,6 +421,23 @@
             {% endif %}
             <input type="text" size="20" autocomplete="off" id="tag-selector" />
 
+            <h3>{% trans "By Category(s)" %}</h3>
+            {% if not categories.count %}
+                <small>{% trans "No category selected, use the box bellow to add categories to the filter." %}</small>
+            {% else %}
+                <ul>
+                    {% for c in categories %}
+                        <li class="selected">
+                            <img class="category-filter-remover" rel="{{ t.id }}" src="{% media "/media/images/close-small-dark.png" %}">
+                            {{ c.name }} ({{ c.used_count }})
+                        </li>
+                    {% endfor %}
+                </ul>
+                <small>{% trans "Click on the cross next to a category name to remove it from the filter." %}</small>
+            {% endif %}
+            <input type="text" size="20" autocomplete="off" id="category-selector" />
+
+
             <h3>{% trans "Pre defined" %}</h3>
             {% if not settings.NODE_MAN_FILTERS %}
                 <small>{% trans "There are no saved filters. Click bellow to add." %}</small>
@@ -431,16 +486,18 @@
                             score = current_sort == "score" and "ascending" or (current_sort == "score_asc" and "descending" or "")
                             act_at = current_sort == "act_at" and "ascending" or (current_sort == "act_at_asc" and "descending" or "")
                             act_by = current_sort == "act_by" and "ascending" or (current_sort == "act_by_asc" and "descending" or "")
+                            category = current_sort == "category" and "ascending" or (current_sort == "category_asc" and "descending" or "")
 
                             added_at_link = current_sort == "added_at" and nodes.paginator.added_at_asc_sort_link or nodes.paginator.added_at_sort_link
                             author_link = current_sort == "author_asc" and nodes.paginator.author_sort_link or nodes.paginator.author_asc_sort_link
                             act_at_link = current_sort == "act_at" and nodes.paginator.act_at_asc_sort_link or nodes.paginator.act_at_sort_link
                             act_by_link = current_sort == "act_by_asc" and nodes.paginator.act_by_sort_link or nodes.paginator.act_by_asc_sort_link
+                            category_link = current_sort == "category_asc" and nodes.paginator.category_sort_link or nodes.paginator.category_asc_sort_link
                         {% enddeclare %}
                         {% spaceless %}
                         <th class="action-checkbox-column">
                             <input type="checkbox" id="action-toggle" style="display: inline;" />
-                        </th>                        
+                        </th>
                         <th>{% trans "Type" %}</th>
                         <th>{% trans "Summary" %}</th>
                         <th class="col-resizer"></th>
@@ -461,6 +518,9 @@
                         </th>
                         <th class="sorted {{ act_at }}">
                             <a href="{{ act_at_link }}">{% trans "Last activity at" %}</a>
+                        </th>
+                        <th >
+                            <a href="{{ category_link }}">{% trans "Category" %}</a>
                         </th>
                         <th>{% trans "Tags" %}</th>
                         {% endspaceless %}
@@ -500,6 +560,10 @@
                         <!--<td>{{ node.score }}</td>-->
                         <td><a href="{{ node.last_activity_by.get_absolute_url  }}">{{ node.last_activity_by.decorated_name }}</a></td>
                         <td>{% diff_date node.last_activity_at %}</td>
+                        <td>
+
+                                <b>{{node.category }}</b>
+                        </td>
                         <td>
                             {% for t in node.tags.all %}
                                 {% if t|contained_in:tags %}<b>{{ t.name }}</b>

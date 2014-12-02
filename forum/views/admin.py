@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-import json
 import time
 
 from django.views.decorators.csrf import csrf_exempt
@@ -8,6 +7,7 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect, HttpResponse, Http404
 from django.template import RequestContext
 from django.utils.translation import ugettext as _
+from django.utils import simplejson
 from django.db import models
 
 from django.contrib import messages
@@ -22,6 +22,8 @@ from forum.models import Question, Answer, User, Node, Action, Page, NodeState, 
 from forum.models.node import NodeMetaClass
 from forum.actions import NewPageAction, EditPageAction, PublishAction, DeleteAction, UserJoinsAction, CloseAction
 from forum import settings
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 
 TOOLS = {}
 
@@ -121,7 +123,7 @@ def statistics(request):
             'added_at', flat=True)
 
     last_month_n_questions = Question.objects.filter_state(deleted=False).filter(added_at__lt=last_month).count()
-    qgraph_data = json.dumps([
+    qgraph_data = simplejson.dumps([
     (time.mktime(d.timetuple()) * 1000, i + last_month_n_questions)
     for i, d in enumerate(last_month_questions)
     ])
@@ -131,7 +133,7 @@ def statistics(request):
 
     last_month_n_users = User.objects.filter(date_joined__lt=last_month).count()
 
-    ugraph_data = json.dumps([
+    ugraph_data = simplejson.dumps([
     (time.mktime(d.timetuple()) * 1000, i + last_month_n_users)
     for i, d in enumerate(last_month_users)
     ])
@@ -339,12 +341,14 @@ def maintenance(request):
                 else:
                     message = _('Settings adjusted')
 
-                messages.info(request, message)
+                #request.user.message_set.create(message=message)
+                messages.add_message(request, messages.INFO, message=message)
 
                 return HttpResponseRedirect(reverse('admin_maintenance'))
         elif 'open' in request.POST:
             settings.MAINTAINANCE_MODE.set_value(None)
-            messages.info(request, _("Your site is now running normally"))
+            #request.user.message_set.create(message=_("Your site is now running normally"))
+            messages.add_message(request, messages.INFO, message=_("Your site is now running normally"))
             return HttpResponseRedirect(reverse('admin_maintenance'))
     else:
         form = MaintenanceModeForm(initial={'ips': request.META['REMOTE_ADDR'],
@@ -524,6 +528,7 @@ def node_management(request):
     authors = request.GET.getlist('authors')
     tags = request.GET.getlist('tags')
 
+    categories = request.GET.getlist('categories')
     type_filter = request.GET.getlist('node_type')
     state_filter = request.GET.getlist('state_type')
     state_filter_type = request.GET.get('state_filter_type', 'any')
@@ -547,6 +552,10 @@ def node_management(request):
     if (tags):
         nodes = nodes.filter(tags__id__in=tags)
         tags = Tag.objects.filter(id__in=tags)
+
+    if (categories):
+        nodes = nodes.filter(category__in =categories)
+        categories = OsqaCategory.objects.filter(id__in = categories)
 
     if text:
         text_in = request.GET.get('text_in', 'body')
@@ -578,6 +587,7 @@ def node_management(request):
     'state_types': state_types,
     'authors': authors,
     'tags': tags,
+    'categories':categories,
     'hide_navigation': True
     }))
 

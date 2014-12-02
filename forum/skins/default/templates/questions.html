@@ -39,11 +39,11 @@
 {% endblock %}
 
 {% block sidebar %}
-    {% include "question_list/count.html" %}
-    {% sidebar_upper %}
-    {% tag_selector %}
-    {% sidebar_lower %}
-    {% question_list_related_tags questions.paginator.page %}
 
+
+{% question_list_categories questions.paginator.page category list_type %}
+{% question_list_related_tags questions.paginator.page %}
+
+    {% include "question_list/count.html" %}
 {% endblock %}
 <!-- end questions.html -->

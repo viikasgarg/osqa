@@ -49,15 +49,15 @@ def create_and_send_mail_messages(messages, sender_data=None, reply_to=None):
         return
 
     sender = Header(unicode(settings.APP_SHORT_NAME), 'utf-8')
-    
+
     if sender_data == None:
         sender.append('<%s>' % unicode(settings.DEFAULT_FROM_EMAIL))
         sender = u'%s <%s>' % (unicode(settings.APP_SHORT_NAME), unicode(settings.DEFAULT_FROM_EMAIL))
     else:
         sender.append('<%s>' % unicode(sender_data['email']))
         sender = u'%s <%s>' % (unicode(sender_data['name']), unicode(sender_data['email']))
-        
-    
+
+
     if reply_to == None:
         reply_to = unicode(settings.DEFAULT_REPLY_TO_EMAIL)
     else:
@@ -75,6 +75,8 @@ def create_and_send_mail_messages(messages, sender_data=None, reply_to=None):
 
             msgRoot = MIMEMultipart('related')
 
+            logging.error("recipient is %s" %recipient)
+
             msgRoot['Subject'] = Header(subject, 'utf-8')
             msgRoot['From'] = sender
 
@@ -84,6 +86,19 @@ def create_and_send_mail_messages(messages, sender_data=None, reply_to=None):
             if reply_to:
                 msgRoot['Reply-To'] = reply_to
 
+
+            try:
+                fp = open(settings.EMAIL_LOGO_PATH, 'rb')
+                msgImage = MIMEImage(fp.read())
+                fp.close()
+
+                # Define the image's ID as referenced above
+                msgImage.add_header('Content-ID', '<logo>')
+                msgRoot.attach(msgImage)
+            except:
+                logging.error("logo image is not attached to email.")
+
+            ##########################################
             msgRoot.preamble = 'This is a multi-part message from %s.' % unicode(settings.APP_SHORT_NAME).encode('utf8')
 
             msgAlternative = MIMEMultipart('alternative')

@@ -5,29 +5,35 @@
     post = comment.parent
     question = post.question and post.question or post
     post_author = smart_str(post.author.username)
+    safe_app_name = html.mark_safe(smart_str(settings.APP_SHORT_NAME))
     safe_post_author = html.mark_safe(smart_str(post.author.username))
     comment_author = html.mark_safe(smart_str(comment.author))
     question_title = html.mark_safe(smart_str(question.title))
     safe_body = html.html2text(smart_str(comment.comment))
     author_link = html.objlink(comment.author, style=settings.EMAIL_ANCHOR_STYLE)
     question_link = html.objlink(question, style=settings.EMAIL_ANCHOR_STYLE)
+    category_name = html.mark_safe(smart_str(question.category_name()))
+    exclude_finetune = True
 {% enddeclare %}
 
 {% email %}
-    {% subject %}{% blocktrans %}{{ prefix }} New comment on: {{ question_title }}{% endblocktrans %}{% endsubject %}
-
+    {% subject %}{% blocktrans %}{{ prefix }} [{{ safe_app_name }}]:New Comment "{{ question_title }}" under category "{{ category_name }}" {% endblocktrans %}{% endsubject %}
     {% htmlcontent notifications/base.html %}
         <p style="{{ p_style }}">
             {% blocktrans %}{{ author_link }} has just posted a comment on {% endblocktrans %}
             {% ifnotequal post question %}
                 {% blocktrans %}the answer posted by {{ post_author }} to {% endblocktrans %}
             {% endifnotequal %}
-            {% blocktrans %}the question {{ question_link }}{% endblocktrans %}
+            {% blocktrans %}the question {{ question_link }}
+			under category "<em>{{ category_name }}</em>". {% endblocktrans %}
         </p>
 
         <blockquote>
         {{ comment.comment }}
         </blockquote>
+        <div width = 100% >
+		{% include "notifications/question_detail.html" %}
+	</div>
 
         <p style="{{ p_style }}">{% trans "Don't forget to come over and cast your vote." %}</p>
     {% endhtmlcontent %}
@@ -38,6 +44,9 @@
 {% blocktrans %}the answer posted by {{ safe_post_author }} to {% endblocktrans %}
 {% endifnotequal %}
 {% blocktrans %}the question "{{ question_title }}"{% endblocktrans %}
+	    {% if category_name != "" %}
+			under category "<em>{{ category_name }}</em>". 
+            {% endif %}
 {{ safe_body }}
 
 {% trans "Don't forget to come over and cast your vote." %}

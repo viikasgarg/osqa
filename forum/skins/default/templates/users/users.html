@@ -1,4 +1,4 @@
-{% extends "base_content.html" %}
+{% extends "base.html" %}
 <!-- users.html -->
 {% load extra_tags %}
 {% load humanize %}
@@ -8,10 +8,12 @@
        <script type="text/javascript">
 	   //todo move javascript out
         $().ready(function(){
+           document.getElementById('CALeft').style.width = "0%";
+           document.getElementById('CARight').style.width = "100%";
             $("#type-user").attr('checked',true);
             var orderby = "{{ tab_id }}";
             $("#sort_" + orderby).attr('className',"on");
-            
+
             Hilite.exact = false;
             Hilite.elementid = "main-body";
             Hilite.debug_referrer = location.href;
@@ -24,11 +26,11 @@
     {{ users.paginator.sort_tabs }}
 </div>
 <div id="main-body" style="width:100%">
-    <p>        
+    <p>
         {% if suser %}
 			{% blocktrans %}users matching query {{suser}}:{% endblocktrans %}
         {% endif %}
-    
+
         {% if not users.paginator.count %}
             <span>{% trans "Nothing found." %}</span>
         {% endif %}
@@ -49,6 +51,6 @@
 {% block tail %}
 <div class="pager">
     {{ users.paginator.page_numbers }}
-</div>              
+</div>
 {% endblock %}
 <!-- end users.html -->

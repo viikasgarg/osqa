@@ -253,6 +253,66 @@ def _comments(post, user):
 def comments(post, user):
     return _comments(post, user)
 
+@register.inclusion_tag('notifications/email_comments.html')
+def emailcomments(post, user):
+    all_comments = post.comments.filter_state(deleted=False)\
+                                .order_by('-added_at' if settings.SHOW_LATEST_COMMENTS_FIRST else 'added_at')
+
+    if len(all_comments) <= 5:
+        top_scorers = all_comments
+    else:
+        top_scorers = sorted(all_comments, lambda c1, c2: cmp(c2.score, c1.score))[0:5]
+
+    comments = []
+    showing = 0
+    for c in all_comments:
+        context = {
+            'can_delete': False,
+            'can_like': False,
+            'can_edit': False,
+            'can_convert':False
+        }
+
+        if c in top_scorers or c.is_reply_to(user):
+            context['top_scorer'] = True
+            showing += 1
+
+        if context['can_like']:
+            context['likes'] = VoteAction.get_for(user, c) == 1
+
+        context['user'] = c.user
+        context['comment'] = c.comment
+        context.update(dict(c.__dict__))
+        comments.append(context)
+
+    # Generate canned comments
+
+    canned_comments = []
+    for comment in settings.CANNED_COMMENTS:
+        t = Template(smart_unicode(comment))
+        c = Context({
+            'post' : post,
+            'settings' : settings,
+        })
+        canned_comments.append(t.render(c))
+
+    total = len(all_comments)
+    return {
+        'comments': comments,
+        'canned_comments': canned_comments,
+        'post': post,
+        'max_length': settings.FORM_MAX_COMMENT_BODY,
+        'min_length': settings.FORM_MIN_COMMENT_BODY,
+        'show_gravatar': False,
+        'showing': showing,
+        'total': total,
+        'more_comments_count' : int(total - showing),
+        'show_latest_comments_first' : settings.SHOW_LATEST_COMMENTS_FIRST,
+        'user': user,
+    }
+
+
+
 @register.inclusion_tag("node/contributors_info.html", takes_context=True)
 def contributors_info(context, node, verb=None):
     return {

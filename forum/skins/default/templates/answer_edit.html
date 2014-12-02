@@ -9,7 +9,7 @@
         <script type='text/javascript' src='{% media  "/media/js/html_sanitizer.js" %}'></script>
         <link rel="stylesheet" type="text/css" href="{% media  "/media/js/wmd/wmd.css" %}" />
         <script type="text/javascript">
-        
+
         $().ready(function(){
             $("#nav_questions").attr('className',"on");
             $('#editor').TextAreaResizer();
@@ -57,16 +57,16 @@
         var answer = "";
         </script>
 {% endblock %}
-        
+
 {% block content %}
 <div id="main-bar" class="headNormal">
     {% trans "Edit answer" %} [<a href="{{ answer.question.get_absolute_url }}#{{ answer.id }}">{% trans "back" %}</a>]
 </div>
 <div id="main-body" class="ask-body">
     <div id="askform">
-        <form id="fmedit" action="{% url "edit_answer" answer.id %}" method="post">
+        <form id="fmedit" action="{% url 'edit_answer' answer.id %}" method="post">
             {% csrf_token %}
-            <label for="id_revision" ><strong>{% trans "revision" %}:</strong></label> <br/> 
+            <label for="id_revision" ><strong>{% trans "revision" %}:</strong></label> <br/>
             {% if revision_form.revision.errors %}{{ revision_form.revision.errors.as_ul }}{% endif %}
             <div>
             {{ revision_form.revision }} <input type="submit" style="display:none" id="select_revision" name="select_revision" value="{% trans "select revision" %}">
@@ -75,7 +75,7 @@
                 <div id="wmd-button-bar" class="wmd-panel"></div>
                 {{ form.text }}
                 <span class="form-error"></span>
-                <div class="preview-toggle"><span id="pre-collapse" 
+                <div class="preview-toggle"><span id="pre-collapse"
 					title="{% trans "Toggle the real time Markdown editor preview" %}">{% trans "toggle preview" %}</span>
 			    <span style="text-align: right; margin-left: 200px;" id="editor-metrics"></span>
 				{% if settings.WIKI_ON %}
@@ -86,29 +86,25 @@
                 </div>
                 <div id="previewer" class="wmd-preview"></div>
             </div>
-            
+
             <strong>{{ form.summary.label_tag }}</strong> <br/>
             {{ form.summary }}  {{ form.summary.errors }}
             <div class="title-desc">
                 {{ form.summary.help_text }}
             </div>
-            
+
             {% if form.recaptcha %}
             <div class="question-captcha">
             	{{ form.recaptcha.errors }}
             	{{ form.recaptcha }}
             </div>
             {% endif %}
-            
+
             <input type="button" value="{% trans "Save edit" %}" class="submit" onclick="submitClicked(event, this.form)" />
             <input type="button" value="{% trans "Cancel" %}" class="submit" onclick="submitClicked(event, this.form);history.back(-1);" />
         </form>
     </div>
 </div>
-{% endblock %}
-
-{% block sidebar %}
-{% include "answer_edit_tips.html" %}
 {% endblock %}
 
 {% block endjs %}

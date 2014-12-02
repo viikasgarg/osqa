@@ -1,9 +1,9 @@
 from django.utils.html import strip_tags
 from django.utils.translation import ugettext as _
 from forum.models.action import ActionProxy
-from forum.models import Comment, Question, Answer, NodeRevision
-from forum import settings, REQUEST_HOLDER
-
+from forum.models import Comment, Question, Answer, NodeRevision, OsqaCategory
+import logging
+import re
 from django.contrib import messages
 
 class NodeEditAction(ActionProxy):
@@ -15,6 +15,16 @@ class NodeEditAction(ActionProxy):
 
         if data.get('tags', None):
             revision_data['tagnames'] = data['tags'].strip()
+
+        if data.get('category', None):
+            revision_data['category'] = data['category'].strip()
+
+        if data.get('recipients', None):
+            revision_data['recipientnames'] = data['recipients'].strip()
+
+#        if data.get('addressbooks', None):
+#            revision_data['addressbooks'] = data['addressbooks'].strip()
+
 
         return revision_data
 
@@ -65,6 +75,7 @@ class CommentAction(ActionProxy):
 
     def process_data(self, text='', parent=None):
         comment = Comment(author=self.user, parent=parent, body=text)
+        comment.category = parent.category
         comment.save()
         self.node = comment
 

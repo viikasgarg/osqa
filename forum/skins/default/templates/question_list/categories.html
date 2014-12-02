@@ -1,0 +1,32 @@
+{% load i18n %}
+{% load humanize %}
+
+{% if categories %}
+    <div class="boxC">
+        <h3 class="subtitle">{% trans "Categories" %}</h3>
+        <div class="category" >
+        <ul class = "category" id="category">
+            {% for category in categories %}
+
+	<li>
+{% ifequal category.pk selected_category.pk %}
+	<table border = "3px" width = 100% bgcolor = #B6C4E2>
+{% else %}
+	<table border = "0" width = 100% >
+{% endifequal %}
+	<tr> 
+
+	<td width = 90%>
+    <a href="{{list_type|urlencode }}/category/{{category.id|urlencode}}" title="{% trans 'see questions under category:' %} {{ category }}  {% trans 'under Category' %}" rel="tag">
+{{ category }} 
+    </a>
+	</td>
+
+	</tr>
+	</table>
+            </li>
+{% endfor %}
+       </ul> 
+       </div>
+    </div>
+{% endif %}

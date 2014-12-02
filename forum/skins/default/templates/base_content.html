@@ -12,24 +12,19 @@
         <meta name="google-site-verification" content="{{ settings.GOOGLE_SITEMAP_CODE }}" />
         {% endif %}
         <link rel="shortcut icon" href="{{ settings.APP_FAVICON }}" />
-        <link href="{% media  "/media/style/style.css" %}" rel="stylesheet" type="text/css" />
+        <link href="{% media  "/media/style/osqa_style.css" %}" rel="stylesheet" type="text/css" />
         {% if settings.USE_CUSTOM_CSS|or_preview:request %}
         <link href="{% url "custom_css" %}" rel="stylesheet" type="text/css" />
         {% endif %}
-        <link rel="stylesheet" type="text/css" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1/themes/base/jquery-ui.css" />
-        <!--[if IE 6]>
-        <style type="text/css">
-        img, div, a { behavior: url({% media "/media/iepngfix/iepngfix.htc" %}) }
-        </style>
-        <![endif]-->
+
         {% block forestyle %}{% endblock %}
 
-        <script src="http://www.google.com/jsapi" type="text/javascript"></script>
+        <script type='text/javascript' src='{% media  "/media/js/jquery-2.1.1.min.js" %}'></script>
+        <script type='text/javascript' src='{% media  "/media/jquery-ui/jquery-ui.min.js" %}'></script>
+        <link  type="text/css" href="{% media  "/media/jquery-ui/jquery-ui.min.css" %}" rel="stylesheet" />
+
         <script type="text/javascript">
         /*<![CDATA[*/
-            google.load("jquery", "1");
-            google.load("jqueryui", "1", {autoload:true});
-
             var i18nLang = '{{ settings.LANGUAGE_CODE }}';
             var appUrl = '{{ settings.APP_URL }}'
             var scriptUrl = '{{ settings.FORCE_SCRIPT_NAME }}/'
@@ -145,7 +140,7 @@
                     {% endfor %}
                 {% endif %}
             {% endautoescape %}
-            <a id="close-notify" onclick="notify.close(true)">&#215;</a>
+            <a id="close-notify" onclick="notify.close(true);">&#215;</a>
         </div>
     </body>
 </html>

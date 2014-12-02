@@ -1,0 +1,22 @@
+{% load extra_tags %}
+{% load i18n %}
+
+{% if show_latest_comments_first %}{% include "node/comment_skeleton.html" %}{% endif %}
+
+<div class="comments-container" id="comments-container-{{ post.id }}">
+    {% for comment in comments %}
+        <a name="{{ comment.id }}"></a>
+        <div style="border:2px solid #a1b2c3;"  id="comment-{{comment.id}}">
+            <div id="post-{{ comment.id }}-score" class="comment-score">{% if comment.score %}{{ comment.score }}{% endif %}</div>
+            <div class="comment-text">{{ comment.comment }}</div>
+            <div class="comment-info" id="comment-{{comment.id}}-info">
+                <span class="comment-age">({% diff_date comment.added_at 0 %})</span>
+                <a class="comment-user userinfo" href="{{comment.user.get_profile_url}}" title ="Single ID: {{ comment.user.decorated_name }}" >{{comment.user.realname}}</a>
+                {% if show_gravatar %}{% gravatar comment.user 18 %}{% endif %}
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+
+{% if not show_latest_comments_first %}{% include "node/comment_skeleton.html" %}{% endif %}

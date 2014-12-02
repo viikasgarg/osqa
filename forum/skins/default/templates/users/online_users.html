@@ -8,6 +8,8 @@
         <script type="text/javascript">
 	    //todo move javascript out
         $().ready(function(){
+            document.getElementById('CALeft').style.width = "0%";
+            document.getElementById('CARight').style.width = "100%";
             $("#type-user").attr('checked',true);
             var orderby = "{{ tab_id }}";
             $("#sort_" + orderby).attr('className',"on");

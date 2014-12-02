@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+<!-- tags.html -->
+{% load i18n %}
+{% load extra_tags %}
+{% load humanize %}
+{% block title %}{% spaceless %}{% trans "Categories" %}{% endspaceless %}{% endblock %}
+{% block extra_head %}
+
+{% block forejs %}
+       <script type="text/javascript">
+       /*<![CDATA[*/
+        $().ready(function(){
+           document.getElementById('CALeft').style.width = "0%";
+           document.getElementById('CARight').style.width = "100%";
+
+        });
+        /*]]>*/
+        </script>
+{% endblock %}
+{% endblock %}  <!-- extra_head -->
+
+{% block content %}
+<!-- Tabs -->
+<div class="tabBar">
+    <div class="headQuestions">{% trans "Category list" %}</div>
+    {{ categories.paginator.sort_tabs }}
+</div>
+<div width="100%">
+
+
+{% if not categories.paginator.count %}
+<p>
+    <span>{% trans "Nothing found" %}</span>
+</p>
+{% endif %}
+
+{% if categories.paginator.count %}
+<table id= "category_table">
+    <tr>
+{% for category in categories.paginator.page %}
+   <td>
+
+    <a href="{% url 'category_questions' category.id|urlencode %}" title="{% trans 'see questions under category ' %} {{ category }}  {% trans 'under Category' %}" rel="tag">
+<span>
+{{ category }} &nbsp {{ category.used_count|intcomma }}
+</span>
+    </a>
+
+    </td>
+    {% if not forloop.last and  forloop.counter|divisibleby:"3"  %}
+    </tr>
+    <tr>
+    {% endif %}
+
+{% endfor %}
+    </tr>
+</table>
+{% endif %}
+</div>
+
+{% endblock %}
+{% block tail %}
+<div class="pager">
+    {{ tags.paginator.page_numbers }}
+</div>
+{% endblock %}
+<!-- end tags.html -->

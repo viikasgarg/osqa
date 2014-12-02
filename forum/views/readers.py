@@ -1,9 +1,11 @@
 # encoding:utf-8
 import datetime
 import logging
+import os
+import mimetypes
 from urllib import unquote
 from django.shortcuts import render_to_response, get_object_or_404
-from django.http import HttpResponseRedirect, Http404, HttpResponsePermanentRedirect
+from django.http import HttpResponseRedirect, Http404, HttpResponsePermanentRedirect,HttpResponse
 from django.core.paginator import Paginator, EmptyPage, InvalidPage
 from django.template import RequestContext
 from django import template
@@ -61,7 +63,7 @@ class QuestionListPaginatorContext(pagination.PaginatorContext):
             (_('hottest'), HottestQuestionsSort(_('hottest'), _("most <strong>active</strong> questions in the last 24 hours</strong>"))),
             (_('mostvoted'), pagination.SimpleSort(_('most voted'), '-score', _("most <strong>voted</strong> questions"))),
             (_('unanswered'), UnansweredQuestionsSort('unanswered', "questions with no answers")),
-        ), pagesizes=pagesizes, default_pagesize=default_pagesize, prefix=prefix)
+        ),default_sort=_('newest'), pagesizes=pagesizes, default_pagesize=default_pagesize, prefix=prefix)
 
 class AnswerSort(pagination.SimpleSort):
     def apply(self, answers):
@@ -73,7 +75,6 @@ class AnswerSort(pagination.SimpleSort):
 class AnswerPaginatorContext(pagination.PaginatorContext):
     def __init__(self, id='ANSWER_LIST', prefix='', default_pagesize=10):
         super (AnswerPaginatorContext, self).__init__(id, sort_methods=(
-            (_('active'), AnswerSort(_('active answers'), '-last_activity_at', _("most recently updated answers/comments will be shown first"))),
             (_('oldest'), AnswerSort(_('oldest answers'), 'added_at', _("oldest answers will be shown first"))),
             (_('newest'), AnswerSort(_('newest answers'), '-added_at', _("newest answers will be shown first"))),
             (_('votes'), AnswerSort(_('popular answers'), ('-score', 'added_at'), _("most voted answers will be shown first"))),
@@ -85,7 +86,13 @@ class TagPaginatorContext(pagination.PaginatorContext):
             (_('name'), pagination.SimpleSort(_('by name'), 'name', _("sorted alphabetically"))),
             (_('used'), pagination.SimpleSort(_('by popularity'), '-used_count', _("sorted by frequency of tag use"))),
         ), default_sort=_('used'), pagesizes=(30, 60, 120))
-    
+
+class CategoryPaginatorContext(pagination.PaginatorContext):
+    def __init__(self):
+        super (CategoryPaginatorContext, self).__init__('CATEGORY_LIST', sort_methods=(
+            (_('name'), pagination.SimpleSort(_('by name'), 'name', _("sorted alphabetically"))),
+            (_('used'), pagination.SimpleSort(_('by popularity'), '-used_count', _("sorted by frequency of Category use"))),
+        ), default_sort=_('used'), pagesizes=(10, 20, 30))
 
 def feed(request):
     return RssQuestionFeed(
@@ -104,22 +111,37 @@ def index(request):
                          feed_url=reverse('latest_questions_feed'),
                          paginator_context=paginator_context)
 
-@decorators.render('questions.html', 'unanswered', _('unanswered'), weight=400)
+@decorators.render('questions.html', 'unaccepted', _('Unaccepted'), weight=300)
+def unaccepted(request):
+    return question_list(request,
+                          Question.objects.exclude(id__in=Question.objects.filter(children__marked=True)).filter(children__node_type='answer').distinct(),
+                         _('open questions without accepted answer'),
+                         None,
+                         _("Question without accepted Answers"),
+                         list_type = "unaccepted"
+                          )
+
+@decorators.render('questions.html', 'unanswered', _('Unanswered'), weight=200)
 def unanswered(request):
     return question_list(request,
-                         Question.objects.exclude(id__in=Question.objects.filter(children__marked=True).distinct()).exclude(marked=True),
-                         _('open questions without an accepted answer'),
+                          Question.objects.exclude(id__in=Question.objects.filter(children__node_type='answer')).distinct(),
+                         _('open questions without any answer or comment'),
                          None,
-                         _("Unanswered Questions"))
+                         _("Unanswered Questions"),
+                         list_type = "unanswered"
+                          )
 
-@decorators.render('questions.html', 'questions', _('questions'), weight=0)
+@decorators.render('questions.html', 'questions', _('Questions'), weight=0)
 def questions(request):
     return question_list(request,
                          Question.objects.all(),
-                         _('questions'))
+                         _('questions'),
+                         list_type = "questions"
+            )
 
-@decorators.render('questions.html')
-def tag(request, tag):
+#@decorators.render('questions.html')
+@decorators.render('questions.html', 'questions')
+def tag_questions(request, tag):
     try:
         tag = Tag.active.get(name=unquote(tag))
     except Tag.DoesNotExist:
@@ -133,33 +155,141 @@ def tag(request, tag):
 
         if user is not None:
             try:
-                questions = questions.filter(author=User.objects.get(username=user))
+                user = User.objects.get(username=user)
+                questions.filter(Q(author=user) | Q(children__author=user))
             except User.DoesNotExist:
                 raise Http404
 
-    # The extra tag context we need to pass
-    tag_context = {
-        'tag' : tag,
-    }
 
     # The context returned by the question_list function, contains info about the questions
     question_context = question_list(request,
-                         questions,
-                         mark_safe(_(u'questions tagged <span class="tag">%(tag)s</span>') % {'tag': tag}),
-                         None,
-                         mark_safe(_(u'Questions Tagged With %(tag)s') % {'tag': tag}),
-                         False)
+                            questions,
+                            mark_safe(_(u'questions tagged with<span class="tag">%(tag)s</span>') % {'tag': tag}),
+                            None,
+                            mark_safe(_(u'Questions tagged with %(tag)s') % {'tag': tag}),
+                            False,
+                            list_type = "questions",
+                            tag = tag
+                        )
 
     # If the return data type is not a dict just return it
     if not isinstance(question_context, dict):
         return question_context
 
-    question_context = dict(question_context)
+    return dict(question_context)
+
+
+@decorators.render('questions.html', 'questions')
+def category_questions(request, category):
+
+    # Getting the questions QuerySet
+    #assert False
+    questions = Question.objects.filter(category = category.strip())
+
+    if request.method == "GET":
+        user = request.GET.get('user', None)
+
+        if user is not None:
+            try:
+                questions = questions.filter(author=User.objects.get(username=user))
+            except User.DoesNotExist:
+                raise Http404
+
+    try:
+        category_name =OsqaCategory.objects.get(id = int(category.strip())).name
+    except OsqaCategory.DoesNotExist:
+        raise Http404
+    except ValueError:
+        raise Http404
+
+    # The context returned by the question_list function, contains info about the questions
+    question_context = question_list(request,
+                            questions,
+                            mark_safe(_(u'questions under category: <span class="category"> %(category)s</span>')% {'category': category_name}),
+                            None,
+                            mark_safe(_(u'Questions Under Category: %(category)s ') % {'category': category_name}),
+                            False,
+                            list_type = "questions",
+                            category = category
+                        )
+
+    # If the return data type is not a dict just return it
+    if not isinstance(question_context, dict):
+        return question_context
+
+    return dict(question_context)
+
+
+@decorators.render('questions.html','unanswered')
+def category_unanswered(request, category):
+
+    # Getting the questions QuerySet
+    questions =  Question.objects.exclude(id__in=Question.objects.filter(children__node_type='answer')).filter(category=category.strip())
+    if request.method == "GET":
+        user = request.GET.get('user', None)
+
+        if user is not None:
+            try:
+                questions = questions.filter(author=User.objects.get(username=user))
+            except User.DoesNotExist:
+                raise Http404
+    category_name =OsqaCategory.objects.get(id = category.strip()).name
+    # The context returned by the question_list function, contains info about the questions
+    question_context = question_list(request,
+                            questions,
+                            mark_safe(_(u'Un-answered questions under category: <span class="category">%(category)s</span>') % {'category': category_name}),
+                            None,
+                            mark_safe(_(u'Un-answered Questions Under Category: %(category)s') % {'category': category_name}),
+                            False,
+                            list_type = "unanswered",
+                            category = category
+                        )
+
+    # If the return data type is not a dict just return it
+    if not isinstance(question_context, dict):
+        return question_context
+
+    return dict(question_context)
 
     # Create the combined context
-    context = dict(question_context.items() + tag_context.items())
+    #context = dict(question_context.items() + tag_context.items())
 
-    return context
+    #return context
+
+
+@decorators.render('questions.html','unaccepted')
+def category_unaccepted(request, category):
+
+    # Getting the questions QuerySet
+    questions = Question.objects.exclude(id__in=Question.objects.filter(children__marked=True)).filter(children__node_type='answer').filter(category=category.strip())
+    if request.method == "GET":
+        user = request.GET.get('user', None)
+
+        if user is not None:
+            try:
+                questions = questions.filter(author=User.objects.get(username=user))
+            except User.DoesNotExist:
+                raise Http404
+
+    category_name =OsqaCategory.objects.get(id = category.strip()).name
+    # The context returned by the question_list function, contains info about the questions
+    question_context = question_list(request,
+                            questions,
+                            mark_safe(_(u'Un-accepted questions under category: <span class="category">%(category)s</span>') % {'category': category_name}),
+                            None,
+                            mark_safe(_(u'Un-accepted Questions Under Category: %(category)s') % {'category': category_name}),
+                            False,
+                            list_type = "unaccepted",
+                            category = category
+                        )
+
+    # If the return data type is not a dict just return it
+    if not isinstance(question_context, dict):
+        return question_context
+
+    return dict(question_context)
+
+
 
 @decorators.render('questions.html', 'questions', tabbed=False)
 def user_questions(request, mode, user, slug):
@@ -198,7 +328,11 @@ def question_list(request, initial,
                   show_summary=None,
                   feed_sort=('-added_at',),
                   feed_req_params_exclude=(_('page'), _('pagesize'), _('sort')),
-                  extra_context={}):
+                  extra_context={},
+                  tag = None,
+          list_type = "questions",
+          category = None
+                  ):
 
     if show_summary is None:
         show_summary = bool(settings.SHOW_SUMMARY_ON_QUESTIONS_LIST)
@@ -241,6 +375,9 @@ def question_list(request, initial,
         'tab' : 'questions',
         'feed_url': feed_url,
         'show_summary' : show_summary,
+        'tag':tag,
+        'list_type':list_type,
+        'category': category
     }
     context.update(extra_context)
 
@@ -267,7 +404,8 @@ def search(request):
 @decorators.render('questions.html')
 def question_search(request, keywords):
     rank_feed = False
-    can_rank, initial = Question.objects.search(keywords)
+    can_rank = False
+    initial = Question.objects.search_keyword(keywords)
 
     if can_rank:
         sort_order = None
@@ -292,7 +430,7 @@ def question_search(request, keywords):
                          feed_url=feed_url, feed_sort=rank_feed and (can_rank,) or '-added_at')
 
 
-@decorators.render('tags.html', 'tags', _('tags'), weight=100)
+@decorators.render('tags.html', 'tags', _('Tags'), weight=500)
 def tags(request):
     stag = ""
     tags = Tag.active.all()
@@ -306,6 +444,14 @@ def tags(request):
         "tags" : tags,
         "stag" : stag,
         "keywords" : stag
+    })
+
+
+@decorators.render('categories.html', 'categories', _('Categories'), weight=400)
+def categories(request):
+    categories = OsqaCategory.objects.exclude(id = 5)         ## hiding system Authentication category
+    return pagination.paginated(request, ('categories', CategoryPaginatorContext()), {
+        "categories" : categories,
     })
 
 def update_question_view_times(request, question):
@@ -346,10 +492,10 @@ def answer_redirect(request, answer):
     pagesize = pc.pagesize(request)
 
     page = count / pagesize
-    
+
     if count % pagesize:
         page += 1
-        
+
     if page == 0:
         page = 1
 
@@ -394,7 +540,7 @@ def question(request, id, slug='', answer=None):
         answer_form = AnswerForm(user=request.user)
 
     answers = request.user.get_visible_answers(question)
-
+    attachments = Attachment.objects.filter(node=question)
     update_question_view_times(request, question)
 
     if request.user.is_authenticated():
@@ -409,18 +555,55 @@ def question(request, id, slug='', answer=None):
     except TypeError, ValueError:
         focused_answer_id = None
 
+    '''
+    recipients_bycategory = []
+    try:
+        _recipients = [recipient.strip()  for recipient in OsqaCategory.objects.get(id = question.category).mail_recipients.split(',')]
+        recipients_bycategory = [user for user in User.objects.filter(id__in = _recipients).distinct()]
+    except:
+        pass  ## not able to find category recipinets
+    '''
+
     return pagination.paginated(request, ('answers', AnswerPaginatorContext()), {
     "question" : question,
     "answer" : answer_form,
+    "attachment" : attachments,
     "answers" : answers,
     "similar_questions" : question.get_related_questions(),
     "subscription": subscription,
     "embed_youtube_videos" : settings.EMBED_YOUTUBE_VIDEOS,
-    "focused_answer_id" : focused_answer_id
+    "focused_answer_id" : focused_answer_id,
+    "recipients" : question.recipientname_list(),
+    #"recipients_bycategory":recipients_bycategory,
+    "category_name": question.category_name(),
+#    "addressbook_list":question.addressbook_list(),
     })
 
 
 REVISION_TEMPLATE = template.loader.get_template('node/revision.html')
+
+def get_attachment_file_as_httpresponse(request,id=None):
+    """
+    Send a file through Django without loading the whole file into
+    memory at once. The FileWrapper will turn the file object into an
+    iterator for chunks of 8KB.
+    """
+    try:
+        attachment = Attachment.objects.get(id=id)
+        filename = os.path.join(settings.UPFILES_ATTACH_FOLDER,attachment.folder_name, attachment.name)
+        file_base_name = os.path.basename(filename)
+        wrapper = FileWrapper(file(filename))
+        response = HttpResponse(wrapper, mimetype=mimetypes.guess_type(filename))
+        response['Content-Length'] = os.path.getsize(filename)
+        response['Content-Disposition'] = \
+            'attachment; filename=%s' % smart_str(file_base_name)
+    except Attachment.DoesNotExist:
+        response = HttpResponse(_('File Does Not Exist'),'text/plain')
+    except:
+        response = HttpResponse(_('File Deleted'),'text/plain')
+
+    return response
+
 
 def revisions(request, id):
     post = get_object_or_404(Node, id=id).leaf
@@ -430,8 +613,11 @@ def revisions(request, id):
     for i, revision in enumerate(revisions):
         rev_ctx.append(dict(inst=revision, html=template.loader.get_template('node/revision.html').render(template.Context({
         'title': revision.title,
+        'category':revision.category_name(),
         'html': revision.html,
         'tags': revision.tagname_list(),
+        'recipients':revision.recipientname_list(),
+    #    'addressbooks':revision.addressbook_list(),
         }))))
 
         if i > 0:

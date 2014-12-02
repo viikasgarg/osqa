@@ -1,0 +1,68 @@
+{% load i18n extra_tags email_tags node_tags %}
+
+{% declare %}
+    prefix = html.mark_safe(smart_str(settings.EMAIL_SUBJECT_PREFIX))
+    app_name = smart_str(settings.APP_SHORT_NAME)
+    safe_app_name = html.mark_safe(smart_str(settings.APP_SHORT_NAME))
+    post_author = html.mark_safe(smart_str(post.author.username))
+    question_title = html.mark_safe(smart_str(question.title))
+    author_link = html.objlink(post.author, style=settings.EMAIL_ANCHOR_STYLE)
+    post_link = html.objlink(post, style=settings.EMAIL_ANCHOR_STYLE)
+{% enddeclare %}
+
+{% email %}
+    {% subject %}{% blocktrans %}{{ prefix }} Post Revised on :{{ question_title }}{% endblocktrans %}{% endsubject %}
+
+    {% htmlcontent notifications/base.html %}
+        <p style="{{ p_style }}">
+            {% blocktrans %}
+                    {{ author_link }} has just revised below post on {{ app_name }} having details {{ post_link }}:  
+            {% endblocktrans %}
+
+        </p>
+
+	<div width="100%">
+<div id="main-bar" class="headNormal">
+    {% trans "Revision history" %}
+</div>
+
+    <div id="revisions">
+    {% for revision in revisions %}
+      <div class="revision">
+        <div id="rev-header-{{ revision.inst.revision }}" class="header {% ifequal post.author revision.inst.author %}author{% endifequal %}">
+          <div class="header-controls">
+            <table width="100%">
+                <tr>
+                    <td width="30px" style="vertical-align:middle"><span class="revision-number" title="{% trans "revision" %} {{ revision.inst.revision }}">{{ revision.inst.revision }}</span></td>
+                    <td width="200px" style="vertical-align:middle">
+                        <div class="summary"><span>{{ revision.inst.summary }}</span></div>
+                    </td>
+                    <td align="right">
+                        <div class="revision-mark" >
+                            {% reviser_info revision.inst %}
+                        </div>
+                    </td>
+                </tr>
+    	            
+            </table>
+          </div>
+        </div>
+        <div id="rev-body-{{ revision.inst.revision }}" class="diff body rev-body">
+            {{ revision.diff|safe }}
+        </div>
+      </div>
+    {% endfor %}
+    </div>
+	</div>
+         <br>
+        <p style="{{ p_style }}">{% trans "Don't forget to come over and cast your vote." %}</p>
+    {% endhtmlcontent %}
+
+
+{% textcontent notifications/base_text.html %}
+{% endtextcontent %}
+
+{% endemail %}
+       
+
+

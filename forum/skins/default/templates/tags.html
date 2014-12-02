@@ -1,4 +1,4 @@
-{% extends "base_content.html" %}
+{% extends "base.html" %}
 <!-- tags.html -->
 {% load i18n %}
 {% load extra_tags %}
@@ -8,6 +8,8 @@
        <script type="text/javascript">
        /*<![CDATA[*/
         $().ready(function(){
+            document.getElementById('CALeft').style.width = "0%";
+            document.getElementById('CARight').style.width = "100%";
             $("#ipSearchTag").focus();
 
             var orderby = "{{ tab_id }}";
@@ -32,7 +34,7 @@
 <div id="searchtags">
 <p>
 {% if stag %}
-    {% trans "All tags matching query" %} '<span class="darkred"><strong>{{ stag }}</strong></span>':
+    {% trans "All Tags matching query" %} '<span class="darkred"><strong>{{ stag }}</strong></span>':
 {% endif %}
 {% if not tags.paginator.count %}
     <span>{% trans "Nothing found" %}</span>
@@ -42,7 +44,7 @@
 <ul class="tagsList tags">
 {% for tag in tags.paginator.page %}
    <li>
-    <a class="tag-link-{{ tag }}" href="{% url "tag_questions" tag|urlencode %}" title="{% trans "see questions tagged" %}'{{ tag }}'{% trans "using tags" %}" rel="tag">
+    <a class="tag-link-{{ tag }}" href="{% url 'tag_questions' tag|urlencode %}" title="{% trans 'see questions having tag' %} {{ tag }}" rel="tag">
         {{ tag }}
     </a>&nbsp;
     <span class="tag-number">&#215; {{ tag.used_count|intcomma }}</span>
@@ -58,6 +60,6 @@
 {% block tail %}
 <div class="pager">
     {{ tags.paginator.page_numbers }}
-</div>              
+</div>
 {% endblock %}
 <!-- end tags.html -->

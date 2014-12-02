@@ -5,9 +5,10 @@
 {% block title %}{% spaceless %}{% trans "Change tags" %}{% endspaceless %}{% endblock %}
 {% block forejs %}
         <script type="text/javascript">
-        
+
         $().ready(function(){
-            $("#id_tags").autocomplete("{% url "matching_tags" %}", {
+            $("#id_tags").autocomplete( {
+                source:"{% url 'matching_tags' %}",
         		matchContains: true,
                 max: 20,
                 multiple: true,
@@ -28,20 +29,20 @@
                 formatResult: function(row, i, max, value){
                     return row[1];
                 }
-                
+
             });
 
         });
         </script>
 {% endblock %}
-        
+
 {% block content %}
 <div id="main-bar" class="headNormal">
     {% trans "Change tags" %} [<a href="{{ question.get_absolute_url }}">{% trans "back" %}</a>]
 </div>
 <div id="main-body" class="ask-body">
     <div id="askform">
-        <form id="fmretag" action="{% url "edit_question" question.id %}" method="post">
+        <form id="fmretag" action="{% url 'edit_question' question.id %}" method="post">
             {% csrf_token %}
             <h3>
                 {{ question.headline }}
@@ -49,8 +50,8 @@
             <div id="description" class="edit-content-html">
                 {{ question.html|safe }}
             </div>
-           
-            
+
+
             <div class="form-item">
                 <strong>{{ form.tags.label_tag }}:</strong> <span class="form-error"></span><br/>
                 {{ form.tags }}  {{ form.tags.errors }}

@@ -1,19 +1,18 @@
 # -*- coding: utf-8 -*-
 
 import datetime
-import json
 import logging
 
 from urllib import urlencode
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import reverse
+from django.utils import simplejson
 from django.utils.encoding import smart_unicode
 from django.utils.translation import ungettext, ugettext as _
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404, render_to_response
 
-from django.contrib import messages
 
 from forum.models import *
 from forum.utils.decorators import ajax_login_required
@@ -22,6 +21,10 @@ from forum.modules import decorate
 from forum import settings
 
 from decorators import command, CommandException, RefreshPageCommand
+import django.contrib.messages
+
+from django.utils import simplejson
+from django.db.models.query_utils import Q
 
 class NotEnoughRepPointsException(CommandException):
     def __init__(self, action, user_reputation=None, reputation_required=None, node=None):
@@ -343,7 +346,7 @@ def accept_answer(request, id):
 
             if accepted_from_author >= settings.MAXIMUM_ACCEPTED_PER_USER:
                 raise CommandException(ungettext("The author of this answer already has an accepted answer in this question.",
-                "Sorry but the author of this answer has reached the limit of accepted answers per question.", int(settings.MAXIMUM_ACCEPTED_PER_USER)))             
+                "Sorry but the author of this answer has reached the limit of accepted answers per question.", int(settings.MAXIMUM_ACCEPTED_PER_USER)))
 
 
         AcceptAnswerAction(node=answer, user=user, ip=request.META['REMOTE_ADDR']).save()
@@ -486,13 +489,13 @@ def convert_comment_to_answer(request, id):
         question = parent
     else:
         question = parent.question
-    
+
     if not user.is_authenticated():
         raise AnonymousNotAllowedException(_("convert comments to answers"))
 
     if not user.can_convert_comment_to_answer(comment):
         raise NotEnoughRepPointsException(_("convert comments to answers"))
-    
+
     CommentToAnswerAction(user=user, node=comment, ip=request.META['REMOTE_ADDR']).save(data=dict(question=question))
 
     return RefreshPageCommand()
@@ -547,18 +550,83 @@ def mark_tag(request, tag=None, **kwargs):#tagging system
                 pass
         else:
             ts.update(reason=reason)
-    return HttpResponse(json.dumps(''), mimetype="application/json")
+    return HttpResponse(simplejson.dumps(''), mimetype="application/json")
 
 def matching_tags(request):
-    if len(request.GET['q']) == 0:
-        raise CommandException(_("Invalid request"))
-
-    possible_tags = Tag.active.filter(name__icontains = request.GET['q'])
+#    print request
+    if len(request.GET['q']) == 0 or request.GET['q'].strip() == ',':
+#        raise CommandException(_("Invalid request"))
+        possible_tags = Tag.active.all()
+    else:
+        possible_tags = Tag.active.filter(name__icontains = request.GET['q'])
     tag_output = ''
     for tag in possible_tags:
         tag_output += "%s|%s|%s\n" % (tag.id, tag.name, tag.used_count)
 
     return HttpResponse(tag_output, mimetype="text/plain")
+
+def matching_categories(request):
+#    print request
+    if len(request.GET['q']) == 0 or request.GET['q'].strip() == ',':
+#        raise CommandException(_("Invalid request"))
+        possible_categories = OsqaCategory.objects.all()
+    else:
+        possible_categories = OsqaCategory.objects.filter(name__icontains = request.GET['q'])
+    category_output = ''
+    for category in possible_categories:
+        category_output += "%s|%s\n" % (category.id, category.name)
+
+#    response_lst = [{'value':'%s' % tag.id, 'label':unicode(tag.name), 'body_template':unicode(tag.body_template), 'default_recipients':tag.get_mail_recipients()} for tag in possible_tags]
+
+    return HttpResponse(category_output, mimetype="text/plain")
+
+
+def category_selected(request):
+    category_id = request.GET.get('category_id', None)
+    try:
+        if category_id is not None:
+            data = OsqaCategory.objects.get(id = category_id)
+        else:
+            data = OsqaCategory.objects.order_by('order_no')[0]
+    except:
+        data = OsqaCategory.objects.order_by('order_no')[0]          ##if did not find category return default template
+
+    response_lst = {'body_template':unicode(data.body_template),
+'notice':unicode(data.notice),
+ 'default_recipients':data.get_mail_recipients()}
+    return HttpResponse(simplejson.dumps(response_lst),
+                        mimetype='application/json')
+
+
+def matching_mails(request):
+    if len(request.GET['q']) == 0:
+        raise CommandException(_("Invalid request"))
+
+#   possible_users = User.objects.filter(username__icontains = request.GET['q'])
+#    response_lst = ''
+
+#    for user in possible_users:
+#          output += ("%s|%s|%s\n" % (user.id, user.decorated_name,user.decorated_name+"@samsung.com"))
+#    keyword = request.GET.get('q', None)
+#    possible_users = User.objects.filter(is_active=True)\
+#                .filter(Q(username__icontains=keyword) |
+#                        Q(userprofile__cn__icontains=keyword))
+#    response_lst = [{'id':'%s' % data.pk, 'name':unicode(data.get_profile())}
+#                    for data in possible_users.all()]
+
+#    for user in possible_users:
+#          response_lst += ("%s|%s|%s\n" % (user.pk, unicode(user.get_profile()),user.get_profile().mail))
+
+#    return HttpResponse(response_lst, mimetype="text/plain")
+    keyword = request.GET.get('q', None)
+    queryset = User.objects.filter(is_active=True)\
+                .filter(Q(username__icontains=keyword))
+    response_lst = [{'id':'%s' % data.pk, 'name':unicode(data.get_profile())}
+                    for data in queryset.all()]
+
+    return HttpResponse(simplejson.dumps(response_lst),
+                        mimetype='application/json')
+
 
 def matching_users(request):
     if len(request.GET['q']) == 0:
@@ -574,12 +642,13 @@ def matching_users(request):
 
 def related_questions(request):
     if request.POST and request.POST.get('title', None):
-        can_rank, questions = Question.objects.search(request.POST['title'])
+        #can_rank,
+        questions = Question.objects.search_keyword(request.POST['title'])
 
-        if can_rank and isinstance(can_rank, basestring):
-            questions = questions.order_by(can_rank)
+        #if can_rank and isinstance(can_rank, basestring):
+        #    questions = questions.order_by(can_rank)
 
-        return HttpResponse(json.dumps(
+        return HttpResponse(simplejson.dumps(
                 [dict(title=q.title, url=q.get_absolute_url(), score=q.score, summary=q.summary)
                  for q in questions.filter_state(deleted=False)[0:10]]), mimetype="application/json")
     else:

@@ -3,8 +3,8 @@ from tag import Tag
 from django.utils.translation import ugettext as _
 
 class QuestionManager(NodeManager):
-    def search(self, keywords, **kwargs):
-        return False, self.filter(models.Q(title__icontains=keywords) | models.Q(body__icontains=keywords))
+    def search_keyword(self, keywords, **kwargs):
+        return self.filter(models.Q(title__icontains=keywords) | models.Q(body__icontains=keywords)  | models.Q(children__body__icontains=keywords))
 
 class Question(Node):
     class Meta(Node.Meta):

@@ -87,7 +87,7 @@ def logout(request):
     'next' : get_next_url(request),
     }, context_instance=RequestContext(request))
 
-@decorators.render('badges.html', 'badges', _('badges'), weight=300)
+@decorators.render('badges.html', 'badges', _('Badges'), weight=700)
 def badges(request):
     from forum.badges.base import BadgesMeta
     badges = sorted([Badge.objects.get(id=id) for id in BadgesMeta.by_id.keys()], lambda b1, b2: cmp(b1.name, b2.name))

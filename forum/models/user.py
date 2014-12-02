@@ -173,6 +173,18 @@ class User(BaseModel, DjangoUser):
         if len(username) > TRUNCATE_USERNAMES_LONGER_THAN and TRUNCATE_LONG_USERNAMES:
             username = '%s...' % username[:TRUNCATE_USERNAMES_LONGER_THAN-3]
 
+        return username
+
+    @property
+    def decorated_name(self):
+        return self._decorated_name()
+
+    def _real_name(self):
+        username = smart_unicode(self.real_name)
+
+        if len(username) > TRUNCATE_USERNAMES_LONGER_THAN and TRUNCATE_LONG_USERNAMES:
+            username = '%s...' % username[:TRUNCATE_USERNAMES_LONGER_THAN-3]
+
         if settings.SHOW_STATUS_DIAMONDS:
             if self.is_superuser:
                 return u"%s \u2666\u2666" % username
@@ -183,8 +195,8 @@ class User(BaseModel, DjangoUser):
         return username
 
     @property
-    def decorated_name(self):
-        return self._decorated_name()
+    def realname(self):
+        return self._real_name()
 
     @property
     def last_activity(self):
@@ -209,6 +221,15 @@ class User(BaseModel, DjangoUser):
         if new:
             sub_settings = SubscriptionSettings(user=self)
             sub_settings.save()
+
+    def get_messages(self):
+        messages = []
+        for m in self.message_set.all():
+            messages.append(m.message)
+        return messages
+
+    def delete_messages(self):
+        self.message_set.all().delete()
 
     @models.permalink
     def get_profile_url(self):
@@ -553,10 +574,10 @@ class SubscriptionSettings(models.Model):
     notify_answers = models.BooleanField(default=True)
     notify_reply_to_comments = models.BooleanField(default=True)
     notify_comments_own_post = models.BooleanField(default=True)
-    notify_comments = models.BooleanField(default=False)
+    notify_comments = models.BooleanField(default=True)
     notify_accepted = models.BooleanField(default=False)
 
-    send_digest = models.BooleanField(default=True)
+    send_digest = models.BooleanField(default=False)
 
     class Meta:
         app_label = 'forum'

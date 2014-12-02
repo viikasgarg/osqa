@@ -21,19 +21,11 @@ except:
     pass
 
 ui.register(ui.HEADER_LINKS,
-            ui.Link(_('faq'), ui.Url('faq'), weight=400, name='FAQ'),
-            ui.Link(_('about'), ui.Url('about'), weight=300, name='ABOUT'),
+            ui.Link(
+                    text=lambda u, c: u.is_authenticated() and _('logout') or _('login'),
+                    url=lambda u, c: u.is_authenticated() and reverse('logout') or reverse('auth_signin'),
+                    weight=200, name='LOGIN/OUT'),
 
-            ui.Link(
-                    visibility=ui.Visibility.ANONYMOUS,
-                    text=_('login'),
-                    url=lambda u, c: reverse('auth_signin'),
-                    weight=200, name='LOGIN'),
-            ui.Link(
-                    visibility=ui.Visibility.AUTHENTICATED,
-                    text=_('logout'),
-                    url=lambda u, c: reverse('logout'),
-                    weight=200, name='LOGOUT'),
             ui.Link(
                     visibility=ui.Visibility.AUTHENTICATED,
                     text=lambda u, c: smart_unicode(u.username),

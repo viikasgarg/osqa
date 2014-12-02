@@ -21,7 +21,7 @@
     </div>
 
     <div class="question-summary-wrapper">
-        <h2><a {% if not question_summary %}title="{{ question.summary }}"{% endif %} href="{{ question.get_absolute_url }}">{{question.headline}}</a></h2>
+        <h2><a {% if not question_summary %}title="{{ question.summary }}"{% endif %} href="{{ question.get_absolute_url }}"> {% if question.headline %} {{ question.headline }} {% else %} Empty Title {% endif %}</a></h2>
         {% if question_summary %}
         <div class="summary">
           {{ question.summary }}
@@ -33,7 +33,7 @@
         </div>
 
         <div class="tags">{% for tag in question.tagname_list %}
-            <a class="tag-link-{{ tag }}" href="{% url "tag_questions" tag|urlencode %}" title="{% trans "see questions tagged" %} '{{ tag }}'" rel="tag">{{ tag }}</a>{% endfor %}
+            <a class="tag-link-{{ tag }}" href="{% url 'tag_questions' tag|urlencode %}" title="{% trans "see questions tagged" %} '{{ tag }}'" rel="tag">{{ tag }}</a>{% endfor %}
         </div>
     </div>
 

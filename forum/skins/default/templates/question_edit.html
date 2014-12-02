@@ -7,13 +7,33 @@
         <script type='text/javascript' src='{% media  "/media/js/wmd/showdown.js" %}'></script>
         <script type='text/javascript' src='{% media  "/media/js/wmd/wmd.js" %}'></script>
         <script type='text/javascript' src='{% media  "/media/js/html_sanitizer.js" %}'></script>
+        <script type="text/javascript" src='{% media "/media/js/kendo_upload.js" %}'></script>
         <link rel="stylesheet" type="text/css" href="{% media  "/media/js/wmd/wmd.css" %}" />
         <script type="text/javascript">
-		//todo move javascript out        
+
+        function category_selected(e,value) {
+
+        jQuery.getJSON("{% url 'category_selected' %}",{"category_id":value},function(data) {
+
+		var obj = jQuery.parseJSON(data);
+    		document.getElementById("notice").value = data.notice
+    		document.getElementById("editor").value = data.body_template
+		document.getElementById("id_defaultrecipients").value = data.default_recipients
+        } );
+
+	}
+		//todo move javascript out
         $().ready(function(){
             $("#nav_questions").attr('className',"on");
             $('#editor').TextAreaResizer();
-            
+
+            // expanding right block to full screen
+            document.getElementById('CALeft').style.width = "0%";
+            document.getElementById('CARight').style.width = "100%";
+
+            //Kendo upload initialization
+            kendo_upload_init({{ uploaded_files }},$("#id_upload_files"),$("#id_attachement_token"),"{% url 'upload_attach' %}", "{% url 'delete_attach' %}");
+
 
             //toggle preview of editor
             var display = true;
@@ -25,9 +45,10 @@
                 $('#previewer').toggle();
                 $('#pre-collapse').text(txt);
             });
-            
+
             //Tags autocomplete action
-        	$("#id_tags").autocomplete("{% url "matching_tags" %}", {
+        	$("#id_tags").autocomplete( {
+                source:"{% url 'matching_tags' %}",
         		matchContains: true,
                 max: 20,
                 multiple: true,
@@ -48,8 +69,8 @@
                 formatResult: function(row, i, max, value){
                     return row[1];
                 }
-                
-            });         
+
+            });
 
             $('#id_revision').unbind().change(function(){
                 $("#select_revision").click();
@@ -86,27 +107,40 @@
         var tag = "";
         </script>
 {% endblock %}
-        
+
 {% block content %}
 <div id="main-bar" class="headNormal">
     {% block edittype %}{% trans "Edit question" %}{% endblock %} [<a href="{{ question.get_absolute_url }}">{% trans "back" %}</a>]
 </div>
+{{ form.media }}
 <div id="main-body" class="ask-body">
     <div id="askform">
         <form id="fmedit" action="" method="post">
             {% csrf_token %}
-            <label for="id_revision" ><strong>{% trans "revision" %}:</strong></label> <br/> 
+            <label for="id_revision" ><strong>{% trans "revision" %}:</strong></label> <br/>
             {% if revision_form.revision.errors %}{{ revision_form.revision.errors.as_ul }}{% endif %}
             <div style="vertical-align:middle">
-            {{ revision_form.revision }} <input type="submit" style="display:none" id="select_revision" name="select_revision" 
+            {{ revision_form.revision }} <input type="submit" style="display:none" id="select_revision" name="select_revision"
 											value="{% trans "select revision"%}">
-            </div> 
+            </div>
+
+
             <div class="form-item">
-                <label for="id_title" ><strong>{{ form.title.label_tag }}:</strong></label> <span class="form-error"></span><br/> 
-                {{ form.title }} {{ form.title.errors }}  
+                <strong>{{ form.category.label_tag }}:</strong> <span class="form-error"></span><br/>
+                {{ form.category }}  {{ form.category.errors }}
+                <div class="title-desc">
+                    {{ form.category.help_text }}
+                </div>
+            </div>
+
+
+
+            <div class="form-item">
+                <label for="id_title" ><strong>{{ form.title.label_tag }}:</strong></label> <span class="form-error"></span><br/>
+                {{ form.title }} {{ form.title.errors }}
                 <div class="title-desc">
                     {{ form.title.help_text }}
-                </div>     
+                </div>
             </div>
             <div class="form-item">
                 <div id="wmd-button-bar" class="wmd-panel"></div>
@@ -125,8 +159,8 @@
                             </td>
                             {% endif %}
                         </tr>
-                    
-                    </table>   
+
+                    </table>
                 </div>
                 <div id="previewer" class="wmd-preview"></div>
             </div>
@@ -137,12 +171,29 @@
                     {{ form.tags.help_text }}
                 </div>
             </div>
+
+            <div class="form-item">
+                <!--<input type="hidden" value="" id="form_attachments" id="form_attachments"/>-->
+                {{ form.form_attachments }}
+                {{ form.attachement_token }}
+                <strong>{{ form.upload_files.label_tag }}:</strong> <span class="form-error"></span><br/>
+                {{ form.upload_files }}  {{ form.tags.errors }}
+            </div>
+
+            <div class="form-item">
+                <strong>{{ form.recipients.label_tag }}:</strong> <span class="form-error"></span><br/>
+                {{ form.recipients }}  {{ form.recipients.errors }}
+                <div class="title-desc">
+                    {{ form.recipients.help_text }}
+                </div>
+            </div>
+
             <strong>{{ form.summary.label_tag }}</strong> <br/>
             {{ form.summary }}  {{ form.summary.errors }}
             <div class="title-desc">
                 {{ form.summary.help_text }}
             </div>
-            
+
             {% if form.recaptcha %}
             <div class="question-captcha" style="float: left">
             	{{ form.recaptcha.errors }}
@@ -150,7 +201,7 @@
             </div>
             <div class="clear"></div>
             {% endif %}
-            
+
             <div class="error" ></div>
             <input type="button" value="{% trans "Save edit" %}" class="submit" onclick="submitClicked(event, this.form)" />
             <input type="button" value="{% trans "Cancel" %}" class="submit" onclick="submitClicked(event, null); history.back(-1);" />

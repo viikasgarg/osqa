@@ -13,6 +13,7 @@ from django.utils import dateformat
 from forum.models import Question, Answer, QuestionRevision, AnswerRevision, NodeRevision
 from django.utils.translation import ugettext as _
 from django.utils.translation import ungettext
+from django.utils import simplejson
 from forum import settings
 from django.template.defaulttags import url as default_url
 from forum import skins
@@ -158,7 +159,7 @@ def diff_date(date, limen=2):
 
     if date.year != now.year:
         return dateformat.format(date, 'd M \'y, H:i')
-    elif days > 2:
+    elif days > 2 or (limen == 0):
         return dateformat.format(date, 'd M, H:i')
 
     elif days == 2:

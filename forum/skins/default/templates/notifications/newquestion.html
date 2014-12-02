@@ -11,24 +11,26 @@
     safe_body = html.html2text(smart_str(question.html))
     author_link = html.objlink(question.author, style=settings.EMAIL_ANCHOR_STYLE)
     question_link = html.objlink(question, style=settings.EMAIL_ANCHOR_STYLE)
-    tag_links = html.mark_safe(smart_str(" ".join([html.objlink(t, style=settings.EMAIL_ANCHOR_STYLE) for t in question.tags.all()])))
+    category_name =  html.mark_safe(smart_str(question.category_name()))
+    exclude_finetune = True
 {% enddeclare %}
 
 {% email %}
-    {% subject %}{% blocktrans %}{{ prefix }} New question: {{ question_title }} on {{ safe_app_name }}{% endblocktrans %}{% endsubject %}
+    {% subject %}{% blocktrans %}{{ prefix }} [{{ safe_app_name }}]:New question "{{ question_title }}" under category "{{ category_name }}" {% endblocktrans %}{% endsubject %}
 
     {% htmlcontent notifications/base.html %}
         <p style="{{ p_style }}">
-            {% if tag_links != "" %}
+            {% if category_name != "" %}
             {% blocktrans %}
             {{ author_link }} has just posted a new question on {{ app_name }}, entitled
             {{ question_link }}
-             and tagged "<em>{{ tag_links }}</em>". Here's what it says:
+             under category "<em>{{ category_name }}</em>". Here's what it says:
             {% endblocktrans %}
             {%else%}
             {% blocktrans %}
             {{ author_link }} has just posted a new question on {{ app_name }}, entitled
             {{ question_link }}. Here's what it says:
+	    {{ question_body }}
             {% endblocktrans %}
             {%endif%}
         </p>
@@ -43,7 +45,7 @@
 {% textcontent notifications/base_text.html %}
 {% blocktrans %}
 {{ question_author }} has just posted a new question on {{ safe_app_name }}, entitled
-"{{ question_title }}" and tagged {{ question_tags }}:
+"{{ question_title }}" and Under Category {{ question_category }}:
 {% endblocktrans %}
 {{ safe_body }}
 

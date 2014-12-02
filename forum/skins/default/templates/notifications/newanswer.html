@@ -1,25 +1,26 @@
-{% load i18n extra_tags email_tags %}
+{% load i18n extra_tags email_tags node_tags %}
 
 {% declare %}
     prefix = html.mark_safe(smart_str(settings.EMAIL_SUBJECT_PREFIX))
     app_name = smart_str(settings.APP_SHORT_NAME)
     safe_app_name = html.mark_safe(smart_str(settings.APP_SHORT_NAME))
     answer_author = html.mark_safe(smart_str(answer.author.username))
-    question = answer.question
     question_title = html.mark_safe(smart_str(question.title))
-    safe_body = html.html2text(smart_str(answer.html))
     author_link = html.objlink(answer.author, style=settings.EMAIL_ANCHOR_STYLE)
     question_link = html.objlink(question, style=settings.EMAIL_ANCHOR_STYLE)
+    category_name = html.mark_safe(smart_str(question.category_name()))
+    exclude_finetune = True
 {% enddeclare %}
 
 {% email %}
-    {% subject %}{% blocktrans %}{{ prefix }} New answer to: {{ question_title }}{% endblocktrans %}{% endsubject %}
-
+    {% subject %}{% blocktrans %}{{ prefix }} [{{ safe_app_name }}] New answer to: "{{ question_title }}" under category "{{ category_name }}" {% endblocktrans %}{% endsubject %}
     {% htmlcontent notifications/base.html %}
         <p style="{{ p_style }}">
             {% blocktrans %}
-            {{ author_link }} has just posted a new answer on {{ app_name }} to the question
-            {{ question_link }}:
+                    {{ author_link }} has just posted below answer on {{ app_name }} to the question {{ question_link }}:
+			under category "<em>{{ category_name }}</em>". 
+
+
             {% endblocktrans %}
         </p>
 
@@ -27,6 +28,10 @@
         {{ answer.html|safe }}
         </blockquote>
 
+	<div width="100%" >
+        	{% include "notifications/question_detail.html" %}
+	</div>
+         <br>
         <p style="{{ p_style }}">{% trans "Don't forget to come over and cast your vote." %}</p>
     {% endhtmlcontent %}
 
@@ -34,6 +39,9 @@
 {% blocktrans %}
 {{ answer_author }} has just posted a new answer on {{ safe_app_name }} to the question
 "{{ question_title }}":
+
+
+			under category "<em>{{ category_name }}</em>". 
 {% endblocktrans %}
 {{ safe_body }}
 

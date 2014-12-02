@@ -37,12 +37,15 @@ def decorated_int(number, cls="thousand"):
 
 @register.filter
 def or_preview(setting, request):
-    if request.user.is_superuser:
-        previewing = request.session.get('previewing_settings', {})
-        if setting.name in previewing:
-            return previewing[setting.name]
+    try:
+        if request.user.is_superuser:
+            previewing = request.session.get('previewing_settings', {})
+            if setting.name in previewing:
+                return previewing[setting.name]
 
-    return setting.value
+        return setting.value
+    except:
+        pass
 
 @register.filter
 def getval(map, key):

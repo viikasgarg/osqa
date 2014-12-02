@@ -97,10 +97,10 @@ class PickledObjectField(models.Field):
     def get_internal_type(self):
         return 'TextField'
 
-    def get_db_prep_lookup(self, lookup_type, value):
+    def get_db_prep_lookup(self, lookup_type, value,connection, prepared=False):
         if lookup_type not in ['exact', 'in', 'isnull']:
             raise TypeError('Lookup type %s is not supported.' % lookup_type)
-        return super(PickledObjectField, self).get_db_prep_lookup(lookup_type, value)
+        return super(PickledObjectField, self).get_db_prep_lookup(lookup_type, value,connection, prepared=False)
 
 
 class KeyValue(BaseModel):

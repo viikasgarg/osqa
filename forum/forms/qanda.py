@@ -1,9 +1,10 @@
 import re
 from datetime import date
+import time
 from django import forms
 from forum.models import *
 from django.utils.translation import ugettext as _
-
+import settings as django_settings
 from django.utils.encoding import smart_unicode
 from general import NextUrlField, UserNameField
 
@@ -11,7 +12,12 @@ from forum import settings, REQUEST_HOLDER
 
 from forum.modules import call_all_handlers
 
+from django.core.urlresolvers import reverse
 import logging
+from django.utils.html import strip_tags
+
+#from addressbook.models import AddressBook
+from django.db.models import Q
 
 class TitleField(forms.CharField):
     def __init__(self, *args, **kwargs):
@@ -19,25 +25,25 @@ class TitleField(forms.CharField):
 
         self.required = True
         self.max_length = 255
-        self.widget = forms.TextInput(attrs={'size' : 70, 'autocomplete' : 'off', 'maxlength' : self.max_length})
-        self.label  = _('title')
+        self.widget = forms.TextInput(attrs={'size' : 70, 'autocomplete' : 'off', 'style' : 'width:53%','maxlength' : self.max_length})
+        self.label  = _('Title')
         self.help_text = _('please enter a descriptive title for your question')
         self.initial = ''
 
     def clean(self, value):
         super(TitleField, self).clean(value)
 
-        if len(value) < settings.FORM_MIN_QUESTION_TITLE:
-            raise forms.ValidationError(_('title must be must be at least %s characters') % settings.FORM_MIN_QUESTION_TITLE)
+        if len(strip_tags(value).strip()) < settings.FORM_MIN_QUESTION_TITLE:
+            raise forms.ValidationError(_('title must be at least %s characters without HTML tags and spaces') % settings.FORM_MIN_QUESTION_TITLE)
 
-        return value
+        return strip_tags(value)
 
 class EditorField(forms.CharField):
     def __init__(self, *args, **kwargs):
         super(EditorField, self).__init__(*args, **kwargs)
 
         self.widget = forms.Textarea(attrs={'id':'editor'})
-        self.label  = _('content')
+        self.label  = _('Content')
         self.help_text = u''
         self.initial = ''
 
@@ -70,17 +76,47 @@ class AnswerEditorField(EditorField):
         return value
 
 
+class CategoryNameField(forms.ChoiceField):
+    def __init__(self, user=None, *args, **kwargs):
+        super(CategoryNameField, self).__init__(*args, **kwargs)
+
+        self.widget.attrs["onchange"]="category_selected(event,this.value)"
+        self.widget.attrs["id"]="category"
+        self.required = True
+
+        choices = [(category.id, category.name) for category in OsqaCategory.objects.order_by('order_no')]  ## removing "System Authentication" category" (Hard-coded)
+        choices.insert(0, (-1,"Select Category"))
+        self.choices= choices
+        self.initial = self.choices[0]
+        #self.max_length = 255
+        self.label  = _('Category')
+        #self.help_text = _('please use space to separate tags (this enables autocomplete feature)')
+        self.help_text = _('Categories are associated with each question asked. Please choose from available categories.')
+        #self.user = user
+
+    def clean(self, value):
+        super(CategoryNameField, self).clean(value)
+
+        if value == "-1":
+            raise forms.ValidationError(_('Please select category (*required)'))
+
+        return value
+
+
+
+
+
 class TagNamesField(forms.CharField):
     def __init__(self, user=None, *args, **kwargs):
         super(TagNamesField, self).__init__(*args, **kwargs)
 
-        self.required = True
-        self.widget = forms.TextInput(attrs={'size' : 50, 'autocomplete' : 'off'})
+        self.required = False
+        self.widget = forms.TextInput(attrs={'size' : 70, 'autocomplete' : 'off','style':'width:53%'})
         self.max_length = 255
-        self.label  = _('tags')
+        self.label  = _('Tags')
         #self.help_text = _('please use space to separate tags (this enables autocomplete feature)')
         self.help_text = _('Tags are short keywords, with no spaces within. At least %(min)s and up to %(max)s tags can be used.') % {
-            'min': settings.FORM_MIN_NUMBER_OF_TAGS, 'max': settings.FORM_MAX_NUMBER_OF_TAGS    
+            'min': settings.FORM_MIN_NUMBER_OF_TAGS, 'max': settings.FORM_MAX_NUMBER_OF_TAGS
         }
         self.initial = ''
         self.user = user
@@ -94,7 +130,8 @@ class TagNamesField(forms.CharField):
         split_re = re.compile(r'[ ,]+')
         list = {}
         for tag in split_re.split(data):
-            list[tag] = tag
+            if len(tag):
+                list[tag] = tag
 
         if len(list) > settings.FORM_MAX_NUMBER_OF_TAGS or len(list) < settings.FORM_MIN_NUMBER_OF_TAGS:
             raise forms.ValidationError(_('please use between %(min)s and %(max)s tags') % { 'min': settings.FORM_MIN_NUMBER_OF_TAGS, 'max': settings.FORM_MAX_NUMBER_OF_TAGS})
@@ -119,7 +156,47 @@ class TagNamesField(forms.CharField):
                         ', '.join(unexistent))
 
 
-        return u' '.join(list_temp)
+        return u','.join(list_temp)
+
+class MailNamesField(forms.CharField):
+    def __init__(self, user=None, *args, **kwargs):
+        super(MailNamesField, self).__init__(*args, **kwargs)
+
+        '''
+        self.widget = AutoCompleteInput(search_model=User, token_limit=75,
+                    placeholder="Please enter mail recipient Names.",
+                    search_url=reverse('matching_mails'))
+        '''
+        self.widget = forms.TextInput(attrs={'size' : 70, 'autocomplete' : 'off','style':'width:53%'})
+
+        self.max_length = 255
+        self.label  = _('Add Mail Recipients')
+        self.help_text = _('Email Notification will be send to the users added in this field')
+        self.initial = ''
+        self.user = user
+        self.required = False
+
+    def clean(self, value):
+        super(MailNamesField, self).clean(value)
+
+        value = super(MailNamesField, self).clean(value)
+        data = value.strip().lower()
+
+        split_re = re.compile(r',')
+        list = {}
+        for mail in split_re.split(data):
+            if len(mail):
+                list[mail] = mail
+
+
+        list_temp = []
+        for key,mail in list.items():
+            # only keep one same mail -- if 1 user is added two times,mail will be send one time.
+            if mail not in list_temp and len(mail.strip()) > 0:
+                list_temp.append(mail)
+
+        return str(u','.join(list_temp))
+
 
 class WikiField(forms.BooleanField):
     def __init__(self, disabled=False, *args, **kwargs):
@@ -142,7 +219,7 @@ class SummaryField(forms.CharField):
     def __init__(self, *args, **kwargs):
         super(SummaryField, self).__init__(*args, **kwargs)
         self.required = False
-        self.widget = forms.TextInput(attrs={'size' : 50, 'autocomplete' : 'off'})
+        self.widget = forms.TextInput(attrs={'size' : 70, 'autocomplete' : 'off'})
         self.max_length = 300
         self.label  = _('update summary:')
         self.help_text = _('enter a brief summary of your revision (e.g. fixed spelling, grammar, improved style, this field is optional)')
@@ -177,9 +254,16 @@ class AskForm(forms.Form):
 
     def __init__(self, data=None, user=None, *args, **kwargs):
         super(AskForm, self).__init__(data, *args, **kwargs)
-
+        self.fields['category']   = CategoryNameField(user)
         self.fields['tags']   = TagNamesField(user)
-        
+        self.fields['recipients'] = MailNamesField(user)
+        self.fields['defaultrecipients'] = forms.CharField(label=_('Category Mailing List:'), required=False)
+       # self.fields['addressbooks'] = AddressBookField(user)
+        self.fields['upload_files'] = forms.FileField(required=False,label=_('Upload Files:'),
+                                    help_text='Select files to attach')
+        self.fields['form_attachments'] = forms.CharField(widget=forms.HiddenInput(),required=False)
+        self.fields['attachement_token'] = forms.CharField(required=False,widget=forms.HiddenInput(),initial = int(time.time() * 1000))
+
         if not user.is_authenticated() or (int(user.reputation) < settings.CAPTCHA_IF_REP_LESS_THAN and not (user.is_superuser or user.is_staff)):
             spam_fields = call_all_handlers('create_anti_spam_field')
             if spam_fields:
@@ -200,7 +284,7 @@ class AnswerForm(forms.Form):
 
     def __init__(self, data=None, user=None, *args, **kwargs):
         super(AnswerForm, self).__init__(data, *args, **kwargs)
-        
+
         if not user.is_authenticated() or (int(user.reputation) < settings.CAPTCHA_IF_REP_LESS_THAN and not (user.is_superuser or user.is_staff)):
             spam_fields = call_all_handlers('create_anti_spam_field')
             if spam_fields:
@@ -214,6 +298,14 @@ class AnswerForm(forms.Form):
 
         if settings.WIKI_ON:
             self.fields['wiki'] = WikiField()
+
+
+class RecategoryQuestionForm(forms.Form):
+    category   = CategoryNameField()
+    # initialize the default values
+    def __init__(self, question, *args, **kwargs):
+        super(RecategoryQuestionForm, self).__init__(*args, **kwargs)
+        self.fields['category'].initial = question.category
 
 class RetagQuestionForm(forms.Form):
     tags   = TagNamesField()
@@ -254,8 +346,27 @@ class EditQuestionForm(forms.Form):
         self.fields['title'].initial = revision.title
         self.fields['text'].initial = revision.body
 
+        self.fields['category'] = CategoryNameField(user)
+        self.fields['category'].initial = revision.category
+
         self.fields['tags'] = TagNamesField(user)
         self.fields['tags'].initial = revision.tagnames
+
+        self.fields['recipients'] = MailNamesField(user)
+        self.fields['recipients'].initial = revision.recipientnames
+
+#        self.fields['addressbooks'] = AddressBookField(user)
+#        self.fields['addressbooks'].initial = revision.addressbooks.split(',')
+
+        self.fields['upload_files'] = forms.FileField(required=False,label=_('Upload Files:'),
+                                    help_text='Select files to attach')
+        self.fields['form_attachments'] = forms.CharField(widget=forms.HiddenInput(),required=False)
+        self.fields['attachement_token'] = forms.CharField(required=False,widget=forms.HiddenInput(),initial = int(time.time() * 1000))
+
+        attachments = Attachment.objects.filter(node=question)
+        if len(attachments):
+             self.fields['attachement_token'].initial = attachments[0].folder_name
+             self.fields['form_attachments'].initial = ";".join([a.name  for a in attachments])
 
         if not user.is_authenticated() or (int(user.reputation) < settings.CAPTCHA_IF_REP_LESS_THAN and not (user.is_superuser or user.is_staff)):
             spam_fields = call_all_handlers('create_anti_spam_field')
@@ -293,7 +404,7 @@ class EditAnswerForm(forms.Form):
                 self._anti_spam_fields = spam_fields.keys()
             else:
                 self._anti_spam_fields = []
-        
+
         if settings.WIKI_ON:
             self.fields['wiki'] = WikiField(disabled=(answer.nis.wiki and not user.can_cancel_wiki(answer)), initial=answer.nis.wiki)
 
@@ -333,10 +444,10 @@ class EditUserForm(forms.Form):
                         return self.cleaned_data['email']
                     except User.MultipleObjectsReturned:
                         logging.error("Found multiple users sharing the same email: %s" % self.cleaned_data['email'])
-                        
+
                     raise forms.ValidationError(_('this email has already been registered, please use another one'))
         return self.cleaned_data['email']
-        
+
 
 NOTIFICATION_CHOICES = (
     ('i', _('Instantly')),
@@ -360,4 +471,31 @@ class UserPreferencesForm(forms.Form):
     sticky_sorts = forms.BooleanField(required=False, initial=False)
 
 
+class MultiSelectWidget(forms.SelectMultiple):
+    css_class = 'multiselect'
+    class Media:
+        css = {
+            'all': (
 
+                django_settings.STATIC_URL + 'multiselect/css/ui.multiselect.css',
+            )
+        }
+        js = (
+#            'https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js',
+#            'https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.6/jquery-ui.min.js',
+
+             django_settings.STATIC_URL + 'multiselect/js/ui.multiselect.js',
+
+        )
+
+    def add_css_class(self, attrs):
+        attrs = attrs or {}
+        if 'class' in attrs:
+            attrs['class'] += " %s" % self.css_class
+        else:
+            attrs['class'] = self.css_class
+        return attrs
+
+    def __init__(self, attrs=None):
+        attrs = self.add_css_class(attrs)
+        super(MultiSelectWidget, self).__init__(attrs=attrs)

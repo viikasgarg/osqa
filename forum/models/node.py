@@ -3,6 +3,7 @@
 from base import *
 import re
 from tag import Tag
+from category import OsqaCategory
 
 import markdown
 from django.utils.encoding import smart_unicode
@@ -14,9 +15,13 @@ from forum.utils.userlinking import auto_user_link
 from forum.settings import SUMMARY_LENGTH
 from utils import PickledObjectField
 
+
 class NodeContent(models.Model):
+    category   = models.CharField(max_length=125)
     title      = models.CharField(max_length=300)
     tagnames   = models.CharField(max_length=125)
+    recipientnames = models.CharField(max_length=300) ##vikas.garg
+
     author     = models.ForeignKey(User, related_name='%(class)ss')
     body       = models.TextField()
 
@@ -29,7 +34,7 @@ class NodeContent(models.Model):
         return self.body
 
     def rendered(self, content):
-        return auto_user_link(self, self._as_markdown(content, *['auto_linker']))
+        return auto_user_link(self, self._as_markdown(content, *['auto_linker','nl2br']))
 
     @classmethod
     def _as_markdown(cls, content, *extensions):
@@ -53,11 +58,31 @@ class NodeContent(models.Model):
 
         return title
 
+
+
+    def category_name(self):
+       try:
+          category = OsqaCategory.objects.get(id =self.category)
+          return category.name
+       except:
+          return 'uncategorized'
+
     def tagname_list(self):
         if self.tagnames:
-            return [name.strip() for name in self.tagnames.split() if name]
+            return [name.strip() for name in self.tagnames.split(",") if name]
         else:
             return []
+
+    def recipientname_list(self):
+        if self.recipientnames:
+            names = [name.strip() for name in self.recipientnames.split(",") if name.strip()]
+            recipients = [user for user in User.objects.filter(id__in = names).distinct()]
+            #if self.author not in recipients:
+            #   recipients.insert(0,self.author)
+            return recipients
+        else:
+            return []
+
 
     def tagname_meta_generator(self):
         return u','.join([tag for tag in self.tagname_list()])
@@ -368,10 +393,10 @@ class Node(BaseModel, NodeContent):
 
     def activate_revision(self, user, revision):
         self.title = revision.title
+        self.category = revision.category
         self.tagnames = revision.tagnames
-
+        self.recipientnames = revision.recipientnames
         self.body = self.rendered(revision.body)
-
         self.active_revision = revision
 
         # Try getting the previous revision
@@ -381,8 +406,8 @@ class Node(BaseModel, NodeContent):
             update_activity = True
 
             # Do not update the activity if only the tags are changed
-            if prev_revision.title == revision.title and prev_revision.body == revision.body \
-            and prev_revision.tagnames != revision.tagnames and not settings.UPDATE_LATEST_ACTIVITY_ON_TAG_EDIT:
+            if prev_revision.title == revision.title and prev_revision.body == revision.body and prev_revision.recipientnames == revision.recipientnames \
+            and prev_revision.tagnames != revision.tagnames and prev_revision.category == revision.category and not settings.UPDATE_LATEST_ACTIVITY_ON_TAG_EDIT:
                 update_activity = False
         except NodeRevision.DoesNotExist:
             update_activity = True
@@ -423,16 +448,38 @@ class Node(BaseModel, NodeContent):
             return None
         else:
             if self._original_state['tagnames']:
-                old_tags = set(self._original_state['tagnames'].split())
+                old_tags = set(self._original_state['tagnames'].split(","))
             else:
                 old_tags = set()
-            new_tags = set(self.tagnames.split())
+            new_tags = set(self.tagnames.split(","))
 
             return dict(
                     current=list(new_tags),
                     added=list(new_tags - old_tags),
                     removed=list(old_tags - new_tags)
                     )
+
+    def _process_changes_in_categories(self):
+        if self._original_state['category'] == self.category:
+           return
+
+        if self._original_state['category'] is not None:
+           try:
+                category = OsqaCategory.objects.get(id =self._original_state['category'])
+                category.add_to_usage_count(-1)
+                category.save()
+           except OsqaCategory.DoesNotExist:
+                pass
+ 
+
+
+        if self.category is not None:
+            try:
+                category = OsqaCategory.objects.get(id =self.category)
+                category.add_to_usage_count(1)
+                category.save()
+            except:
+                pass
 
     def _last_active_user(self):
         return self.last_edited and self.last_edited.by or self.author
@@ -472,10 +519,22 @@ class Node(BaseModel, NodeContent):
             for tag in self.tags.all():
                 tag.add_to_usage_count(-1)
                 tag.save()
+            try:
+                category = OsqaCategory.objects.get(id =self.category)
+                category.add_to_usage_count(-1)
+                category.save()
+            except:
+                pass
         else:
             for tag in Tag.objects.filter(name__in=self.tagname_list()):
                 tag.add_to_usage_count(1)
                 tag.save()
+            try:
+                category = OsqaCategory.objects.get(id =self.category)
+                category.add_to_usage_count(1)
+                category.save()
+            except:
+                pass
 
     def delete(self, *args, **kwargs):
         for tag in self.tags.all():
@@ -497,8 +556,7 @@ class Node(BaseModel, NodeContent):
         if not self.id:
             self.node_type = self.get_type()
             super(BaseModel, self).save(*args, **kwargs)
-            self.active_revision = self._create_revision(self.author, 1, title=self.title, tagnames=self.tagnames,
-                                                         body=self.body)
+            self.active_revision = self._create_revision(self.author, 1, title=self.title, tagnames=self.tagnames,recipientnames = self.recipientnames,  body=self.body,category = self.category)
             self.activate_revision(self.author, self.active_revision)
             self.update_last_activity(self.author, time=self.added_at)
 
@@ -506,7 +564,9 @@ class Node(BaseModel, NodeContent):
             self.abs_parent = self.parent.absolute_parent
         
         tags_changed = self._process_changes_in_tags()
-        
+   
+        if self.node_type == 'question':
+                self._process_changes_in_categories()
         super(Node, self).save(*args, **kwargs)
         if tags_changed:
             if self.tagnames.strip():

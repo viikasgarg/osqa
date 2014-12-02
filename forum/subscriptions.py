@@ -5,9 +5,13 @@ import logging
 from forum.models import User, Question, Comment, QuestionSubscription, SubscriptionSettings, Answer
 from forum.utils.mail import send_template_email
 from django.utils.translation import ugettext as _
-from forum.actions import AskAction, AnswerAction, CommentAction, AcceptAnswerAction, UserJoinsAction, QuestionViewAction
+from forum.actions import AskAction, AnswerAction, CommentAction, AcceptAnswerAction, UserJoinsAction, QuestionViewAction, ReviseAction
 from forum import settings
 from django.db.models import Q, F
+from django import template
+from django.utils.safestring import mark_safe
+from forum.utils.diff import textDiff as htmldiff
+
 
 def create_subscription_if_not_exists(question, user):
     try:
@@ -24,6 +28,35 @@ def create_subscription_if_not_exists(question, user):
 
     return False
 
+def remove_subscription_if_exists(question, user):
+    try:
+        subscription = QuestionSubscription.objects.get(question=question, user=user)
+        subscription.delete()
+    except QuestionSubscription.MultipleObjectsReturned:
+        pass
+    except QuestionSubscription.DoesNotExist:
+        pass
+    except Exception, e:
+        logging.error(e)
+
+    return True
+
+
+def create_subscription_for_mailing_list(question,userquery):
+        userlist = [user for user in userquery if user != question.author]
+        existingUserList = [subscription.user for  subscription in QuestionSubscription.objects.filter(question=question)]
+
+## remove deleted Mailing List subscriptions
+        for sub_remove in list(set(existingUserList) - set (userlist)):
+                subscriptions = QuestionSubscription.objects.filter(question=question, user=sub_remove)
+                subscriptions.delete()
+
+## Add Mailing List subscriptions
+        for sub_add in list(set(userlist) - set (existingUserList)):
+                subscription = QuestionSubscription(question=question, user=sub_add)
+                subscription.save()
+
+
 def filter_subscribers(subscribers):
     subscribers = subscribers.exclude(is_active=False)
 
@@ -38,14 +71,23 @@ def question_posted(action, new):
     if not question.is_notifiable:
         return
 
-    subscribers = User.objects.filter(
-            Q(subscription_settings__enable_notifications=True, subscription_settings__new_question='i') |
-            (Q(subscription_settings__new_question_watched_tags='i') &
-              Q(marked_tags__name__in=question.tagnames.split(' ')) &
-              Q(tag_selections__reason='good'))
-    ).exclude(id=question.author.id).distinct()
+## Mailing List Depending Upon Category
+    _recipient_ids = ",".join([category.mail_recipients for category in OsqaCategory.objects.filter(id__in = question.category.split(','))]).split(",")
+    recipient_ids =[ recipient.strip()  for recipient in _recipient_ids if recipient.strip() ]
+    if len(recipient_ids):
+        category_subscribers = User.objects.filter(id__in =recipient_ids ).distinct()
+        all_subscribers = category_subscribers
 
-    subscribers = filter_subscribers(subscribers)
+## Mailing List Subscribers
+    recipient_list = [ recipient.strip()  for recipient in question.recipientnames.split(',') if recipient.strip() ]
+
+    if len(recipient_list):
+        mailing_subscribers = User.objects.filter(id__in = recipient_list ).distinct()
+
+        if len(recipient_ids):
+                all_subscribers = category_subscribers  | mailing_subscribers
+        else:
+                all_subscribers = mailing_subscribers
 
     send_template_email(subscribers, "notifications/newquestion.html", {'question': question})
 
@@ -88,9 +130,119 @@ def answer_posted(action, new):
 AnswerAction.hook(answer_posted)
 
 
+def revision_posted(action, new):
+    post = action.node
+
+    if post.node_type =="question":
+        question = post
+
+    else:
+        question = post.abs_parent
+
+    revisions = list(post.revisions.order_by('revised_at'))
+    rev_ctx = []
+
+    for i, revision in enumerate(revisions):
+        rev_ctx.append(dict(inst=revision, html=template.loader.get_template('node/revision.html').render(template.Context({
+        'title': revision.title,
+        'html': revision.html,
+        'category':revision.category_name(),
+        'tags': revision.tagname_list(),
+        'recipients':revision.recipientname_list(),
+        }))))
+
+        if i > 0:
+            rev_ctx[i]['diff'] = mark_safe(htmldiff(rev_ctx[i-1]['html'], rev_ctx[i]['html']))
+        else:
+            rev_ctx[i]['diff'] = mark_safe(rev_ctx[i]['html'])
+
+        if not (revision.summary):
+            rev_ctx[i]['summary'] = _('Revision n. %(rev_number)d') % {'rev_number': revision.revision}
+        else:
+            rev_ctx[i]['summary'] = revision.summary
+
+    rev_ctx.reverse()
+
+    #update mailing list according to last revision of category
+
+    if post.node_type =="question":
+       prev_question = revisions[-2]
+       present_question = revisions[-1]
+       if (prev_question.category != present_question.category):
+           ## remove previous category subscriptions
+           _recipient_ids = ",".join([category.mail_recipients for category in OsqaCategory.objects.filter(id__in =  prev_question.category.split(','))]).split(",")
+           recipient_ids =[ recipient.strip()  for recipient in _recipient_ids if recipient.strip() ]
+           if len(recipient_ids):
+               category_subscribers = User.objects.filter(id__in =recipient_ids ).distinct()
+               for subscriber in category_subscribers:
+                   remove_subscription_if_exists(question, subscriber)
+
+           ## remove previous mailing subscriptions
+       if (prev_question.recipientnames != present_question.recipientnames):
+           recipient_list = [ recipient.strip()  for recipient in prev_question.recipientnames.split(',') if recipient.strip() ]
+           if len(recipient_list):
+               mailing_subscribers = User.objects.filter(id__in = recipient_list ).distinct()
+               for subscriber in mailing_subscribers:
+                   remove_subscription_if_exists(question, subscriber)
+
+        ## Add present mailing subscriptions
+       if (prev_question.recipientnames != present_question.recipientnames):
+           recipient_list = [ recipient.strip()  for recipient in present_question.recipientnames.split(',') if recipient.strip() ]
+           if len(recipient_list):
+               mailing_subscribers = User.objects.filter(id__in = recipient_list ).distinct()
+               for subscriber in mailing_subscribers:
+                   create_subscription_if_not_exists(question, subscriber)
+
+
+
+       if (prev_question.category != present_question.category):
+        ## Add present category subscriptions
+        _recipient_ids = ",".join([category.mail_recipients for category in OsqaCategory.objects.filter(id__in =  present_question.category.split(','))]).split(",")
+        recipient_ids =[ recipient.strip()  for recipient in _recipient_ids if recipient.strip() ]
+        if len(recipient_ids):
+            category_subscribers = User.objects.filter(id__in =recipient_ids ).distinct()
+            for subscriber in category_subscribers:
+                create_subscription_if_not_exists(question, subscriber)
+
+
+    if not post.is_notifiable or not question.is_notifiable:
+        return
+
+    subscribers = question.subscribers.all().distinct()
+    '''
+    addressbook_contacts = question.addressbook_contacts() ## query containing all users which are in address book
+    if  addressbook_contacts.exists():
+        if subscribers.exists():
+             subscribers |= addressbook_contacts ## adding address book contacts
+        else:
+             subscribers = addressbook_contacts
+    '''
+    if subscribers.exists():
+        subscribers = filter_subscribers(subscribers.exclude(id=post.author.id))
+
+
+        try:
+            sender_mail = User.objects.get(user = post.author).mail;
+            sender = {'name':post.author.username,'email':sender_mail }
+        except: ## Use Default forum mail address in case of error
+            sender_mail = unicode(settings.DEFAULT_FROM_EMAIL)
+            sender = u'%s <%s>' % (unicode(settings.APP_SHORT_NAME), unicode(settings.DEFAULT_FROM_EMAIL))
+
+        if subscribers.exists():
+            send_template_email(subscribers, "notifications/emailrevision.html", {'post': post, 'revisions' : rev_ctx,'question':question},sender = sender, reply_to = sender_mail)
+
+    create_subscription_if_not_exists(question, post.author)
+
+ReviseAction.hook(revision_posted)
+
+
+
+
 def comment_posted(action, new):
     comment = action.node
     post = comment.parent
+    question = comment.abs_parent
+    answers = comment.author.get_visible_answers(question)
 
     if not comment.is_notifiable or not post.is_notifiable:
         return
@@ -132,7 +284,7 @@ def answer_accepted(action, new):
             subscription_settings__enable_notifications=True,
             subscription_settings__subscribed_questions='i'
     ).exclude(id=action.node.nstate.accepted.by.id).distinct()
-    
+
     subscribers = filter_subscribers(subscribers)
 
     send_template_email(subscribers, "notifications/answeraccepted.html", {'answer': action.node})

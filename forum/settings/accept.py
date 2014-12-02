@@ -9,6 +9,10 @@ label = _("Disallow answers to be accepted"),
 help_text = _("Disable accepting answers feature. If you re-enable it in the future, currently accepted answers will still be marked as accepted."),
 required=False))
 
+MAXIMUM_UNACCEPTED_DAYS = Setting('MAXIMUM_UNACCEPTED_DAYS', 7, ACCEPT_SET, dict(
+label = _("Maximum unaccepted days for question's answer"),
+help_text = _("When a question is answered and their is no further answer on question then that last answer will be accepted after maximum days of waiting.")))
+
 MAXIMUM_ACCEPTED_ANSWERS = Setting('MAXIMUM_ACCEPTED_ANSWERS', 1, ACCEPT_SET, dict(
 label = _("Maximum accepted answers per question"),
 help_text = _("How many accepted answers are allowed per question. Use 0 for no limit.")))

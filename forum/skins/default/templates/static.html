@@ -5,7 +5,7 @@
 {% block content %}
 <div class="headNormal">{{ title }}</div>
 <div class="content">
-{{ content|static_content:"markdown" }}
+{{ content|markdown:"settingsparser" }}
 </div>
 {% endblock %}
 

@@ -12,6 +12,7 @@ from django.utils.translation import ugettext as _
 from django.utils.http import urlquote_plus
 from django.utils.html import strip_tags
 from django.utils.encoding import smart_unicode
+from django.utils import simplejson
 from django.core.urlresolvers import reverse, NoReverseMatch
 from forum.forms import *
 from forum.utils.html import sanitize_html
@@ -390,7 +391,7 @@ def user_reputation(request, user, **kwargs):
     values = [r.value for r in rep]
     redux = lambda x, y: x+y
 
-    graph_data = json.dumps([
+    graph_data = simplejson.dumps([
     (time.mktime(rep[i].date.timetuple()) * 1000, reduce(redux, values[:i+1], 0))
     for i in range(len(values))
     ])

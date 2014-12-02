@@ -1,5 +1,7 @@
 {% load extra_filters extra_tags i18n email_tags %}
-
+{% declare %}
+exclude_greeting = True
+{% enddeclare %}
 {% if not exclude_greeting %}
 {% trans "Hello" %} {{ recipient.username }},
 {% endif %}

@@ -89,7 +89,7 @@ def prepare_provider_signin(request, provider):
 
         try:
             request_url = provider_class.prepare_authentication_request(request,
-                                                                        reverse('auth_provider_done', prefix='/',
+                                                                        reverse('auth_provider_done',
                                                                                 kwargs={'provider': provider}))
 
             return HttpResponseRedirect(request_url)

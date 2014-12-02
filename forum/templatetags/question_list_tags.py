@@ -1,7 +1,7 @@
 from django import template
 from django.utils.translation import ugettext as _
 from django.utils.safestring import mark_safe
-from forum.models import Tag, MarkedTag
+from forum.models import Tag, MarkedTag, OsqaCategory
 from forum.templatetags import argument_parser
 from forum import settings
 
@@ -62,6 +62,18 @@ def question_list_related_tags(questions):
         return {'tags': tags}
     else:
         return {'tags': False}
+
+## All categories List --vikas.garg
+@register.inclusion_tag('question_list/categories.html')
+def question_list_categories(questions,selected_category =None,list_type = "questions"):
+        categories = OsqaCategory.objects.order_by('order_no')
+        if selected_category is not None:
+            selected_category = categories.get(id = selected_category)
+
+        ## convert list type according to application path
+        list_type = settings.FORCE_SCRIPT_NAME  + '/forum/' + list_type
+
+        return {'categories': categories,'selected_category':selected_category, 'list_type':list_type}
 
 @register.inclusion_tag('question_list/tag_selector.html', takes_context=True)
 def tag_selector(context):
