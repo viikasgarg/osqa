@@ -112,7 +112,7 @@ DEBUG_TOOLBAR_CONFIG = {
     'INTERCEPT_REDIRECTS': True
 }
 
-INTERNAL_IPS = ('127.0.0.1',)
+INTERNAL_IPS = ('selflearning.herokuapp.com',)
 
 CACHE_BACKEND = 'file://%s' % os.path.join(os.path.dirname(__file__),'cache').replace('\\','/')
 #CACHE_BACKEND = 'dummy://'
