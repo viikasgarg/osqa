@@ -47,7 +47,7 @@ def get_or_create_categories(category):
     if len(categories) > 0:
         return categories[0].pk
     else:
-        user = User.objects.get(username='Geek')
+        user = User.objects.get(username='Geeks')
         category_obj = OsqaCategory()
         category_obj.name = category
         category_obj.order_no = len(OsqaCategory.objects.all())
