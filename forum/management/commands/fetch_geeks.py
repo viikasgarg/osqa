@@ -173,7 +173,7 @@ def get_doc_info(url):
 count = 0
 def save_data_into_table(doc_info):
     if len(doc_info.keys()) > 0:
-        user = User.objects.get(username='Geek')
+        user = User.objects.get(username='Geeks')
         category_id = get_or_create_categories(doc_info['category'])
         ip = '127.0.0.1'
         form_data = {
