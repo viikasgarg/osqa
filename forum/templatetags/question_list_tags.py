@@ -71,7 +71,7 @@ def question_list_categories(questions,selected_category =None,list_type = "ques
             selected_category = categories.get(id = selected_category)
 
         ## convert list type according to application path
-        list_type = settings.FORCE_SCRIPT_NAME  + '/forum/' + list_type
+        list_type = settings.FORCE_SCRIPT_NAME  + '/' + list_type
 
         return {'categories': categories,'selected_category':selected_category, 'list_type':list_type}
 

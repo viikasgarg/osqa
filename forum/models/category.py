@@ -21,7 +21,7 @@ class OsqaCategory(BaseModel):
 
     # Denormalised data
     used_count      = models.PositiveIntegerField(default=0)
-    mail_recipients  = models.CharField(max_length=300,blank=True,null=True) ##vikas.garg
+    #mail_recipients  = models.CharField(max_length=300,blank=True,null=True) ##vikas.garg
     body_template    = models.TextField(blank=True,null=True)  ##vikas garg
     notice           = models.TextField(blank=True,null=True)  ##vikas garg
     active = ActiveCategoryManager()
@@ -67,6 +67,7 @@ class OsqaCategory(BaseModel):
     def get_absolute_url(self):
         return ('category_questions', (), {'category': self.name})
 
+    '''
     def get_mail_recipients(self):
        if self.mail_recipients and self.mail_recipients.strip():
            return "  ".join([user.username for user in User.objects.filter(id__in =self.mail_recipients.split(',')).distinct()])
@@ -76,4 +77,4 @@ class OsqaCategory(BaseModel):
     def get_recipient_list(self):
        if self.mail_recipients and self.mail_recipients.strip():
            return ([user.username for user in User.objects.filter(id__in =self.mail_recipients.split(',')).distinct()])
-
+    '''

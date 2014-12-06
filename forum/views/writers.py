@@ -127,7 +127,7 @@ def delete_attachments(request):
     try:
         token = request.POST.get('token','default')
         file_name = request.POST.get('fileNames')
-        folder_name = os.path.join(settings.UPFILES_ATTACH_FOLDER,token) 
+        folder_name = os.path.join(settings.UPFILES_ATTACH_FOLDER,token)
         storage = FileSystemStorage(folder_name, str(settings.UPFILES_ATTACH_ALIAS))
         #new_file_name = storage.save("_".join(f.split()), f)
 
@@ -155,6 +155,9 @@ def ask(request,category):
             form = AskForm(request.POST, user=request.user)
             if form.is_valid():
                 if request.user.is_authenticated() and request.user.email_valid_and_can_ask():
+                    print "user", request.user
+                    print "IP", request.META['REMOTE_ADDR']
+                    print "form data", form.cleaned_data
                     ask_action = AskAction(user=request.user, ip=request.META['REMOTE_ADDR']).save(data=form.cleaned_data)
                     question = ask_action.node
                     #folder_name = int(form.cleaned_data['attachement_token'])
@@ -183,11 +186,11 @@ def ask(request,category):
                         return HttpResponseRedirect(reverse('auth_signin'))
         elif "go" in request.POST:
             form = AskForm({'title': request.POST['q']}, user=request.user)
-            
+
     if not form:
         form = AskForm(user=request.user)
-        form.fields['defaultrecipients'].widget.attrs['style'] = "width:53%;display:block"
-        form.fields['defaultrecipients'].widget.attrs['readonly'] = "readonly"
+        #form.fields['defaultrecipients'].widget.attrs['style'] = "width:53%;display:block"
+        #form.fields['defaultrecipients'].widget.attrs['readonly'] = "readonly"
 
     upload_template = ""
     upload_file_template = "{name:'%s',size:%s,extension:'%s'},"
@@ -199,7 +202,7 @@ def ask(request,category):
         if len(attachment.name):
             upload_template += upload_file_template%(attachment.name,attachment.size,"."+attachment.name.split('.')[-1])
     upload_template  = "[" + upload_template[:-1] + "]"
-    
+
     return render_to_response('ask.html', {
         'form' : form,
         'tab' : 'ask',

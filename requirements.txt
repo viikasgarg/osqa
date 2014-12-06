@@ -1,6 +1,7 @@
 markdown==2.4.1
 html5lib
 python-openid
+South
 python-memcached
 django==1.6.0
 django-debug-toolbar
@@ -14,3 +15,4 @@ gunicorn==19.0.0
 static3==0.5.1
 wsgiref==0.1.2
 django-wmd
+beautifulsoup4

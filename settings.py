@@ -42,7 +42,6 @@ if True:#not DEBUG:
     try:
         import dj_database_url
         DATABASES['default'] =  dj_database_url.config()
-        DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql_psycopg2'
     except:
         pass
 
@@ -215,7 +214,7 @@ MODULE_LIST = filter(lambda m: getattr(m, 'CAN_USE', True), [
 
 try:
     import south
-    INSTALLED_APPS.append('south')
+    #INSTALLED_APPS.append('south')
 except:
     pass
 

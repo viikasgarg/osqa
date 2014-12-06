@@ -13,7 +13,7 @@ class GoogleAuthContext(ConsumerTemplateContext):
     icon = '/media/images/openid/google.gif'
 
 
-
+'''
 class YahooAuthConsumer(OpenIdAbstractAuthConsumer):
     def get_user_url(self, request):
         return 'http://me.yahoo.com/'
@@ -176,7 +176,7 @@ class VerisignAuthContext(ConsumerTemplateContext):
     human_name = 'Verisign'
     icon = '/media/images/openid/verisign.png'
 
-    
+
 class OpenIdUrlAuthConsumer(OpenIdAbstractAuthConsumer):
     pass
 
@@ -186,3 +186,4 @@ class OpenIdUrlAuthContext(ConsumerTemplateContext):
     human_name = 'OpenId url'
     stack_item_template = 'modules/openidauth/openidurl.html'
     icon = '/media/images/openid/openid-inputicon.gif'
+'''

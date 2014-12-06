@@ -573,7 +573,7 @@ def question(request, id, slug='', answer=None):
     "subscription": subscription,
     "embed_youtube_videos" : settings.EMBED_YOUTUBE_VIDEOS,
     "focused_answer_id" : focused_answer_id,
-    "recipients" : question.recipientname_list(),
+    #"recipients" : question.recipientname_list(),
     #"recipients_bycategory":recipients_bycategory,
     "category_name": question.category_name(),
 #    "addressbook_list":question.addressbook_list(),
@@ -616,7 +616,7 @@ def revisions(request, id):
         'category':revision.category_name(),
         'html': revision.html,
         'tags': revision.tagname_list(),
-        'recipients':revision.recipientname_list(),
+        #'recipients':revision.recipientname_list(),
     #    'addressbooks':revision.addressbook_list(),
         }))))
 

@@ -6,8 +6,12 @@
         <script type='text/javascript' src='{% media  "/media/js/wmd/showdown.js" %}'></script>
         <script type='text/javascript' src='{% media  "/media/js/wmd/wmd.js" %}'></script>
         <script type='text/javascript' src='{% media  "/media/js/html_sanitizer.js" %}'></script>
-        <script type="text/javascript" src='{% media "/media/js/kendo_upload.js" %}'></script>
+
         <link rel="stylesheet" type="text/css" href="{% media  '/media/js/wmd/wmd.css' %}" />
+        <link rel="stylesheet" type="text/css" href="{% media  '/media/kendoui/style/kendo.common.min.css' %}" />
+        <link rel="stylesheet" type="text/css" href="{% media  '/media/kendoui/style/kendo.bootstrap.min.css' %}" />
+        <script type="text/javascript" src='{% media "/media/kendoui/js/kendo.core.min.js" %}'></script>
+        <script type="text/javascript" src='{% media "/media/kendoui/js/kendo_upload.min.js" %}'></script>
 
         <script type="text/html" id="question-summary-template">
             <div class="answer-summary">
@@ -87,8 +91,8 @@
 
         if (value == -1) {
     		document.getElementById("editor").value = '';
-		defaultrecipients = document.getElementById("id_defaultrecipients")
-                defaultrecipients.value = '';
+		//defaultrecipients = document.getElementById("id_defaultrecipients")
+        //        defaultrecipients.value = '';
 	return } // return if invalid value
 
         jQuery.getJSON("{% url 'category_selected' %}",{"category_id":value},function(data) {
@@ -109,8 +113,8 @@
 		   });
 		}
     		document.getElementById("editor").value = data.body_template;
-		defaultrecipients = document.getElementById("id_defaultrecipients")
-                defaultrecipients.value = data.default_recipients;
+		//defaultrecipients = document.getElementById("id_defaultrecipients")
+         //       defaultrecipients.value = data.default_recipients;
 
 
         } );
@@ -118,11 +122,19 @@
 	}
 
     $().ready(function(){
-        document.getElementById('CALeft').style.width = "0%";
-        document.getElementById('CARight').style.width = "100%";
+
 
         //Kendo upload initialization
-        kendo_upload_init("{{ uploaded_files }}",$("#id_upload_files"),$("#id_attachement_token"),"{% url 'upload_attach' %}", "{% url 'delete_attach' %}");
+        //kendo_upload_init("{{ uploaded_files }}",$("#id_upload_files"),$("#id_attachement_token"),"{% url 'upload_attach' %}", "{% url 'delete_attach' %}");
+
+        $("#id_upload_files").kendoUpload({
+            async: {
+                saveUrl: "{% url 'upload_attach' %}",
+                removeUrl: "{% url 'delete_attach' %}",
+                removeField: "{{ uploaded_files }}"
+            }
+        });
+
     });
         </script>
         <script src="{% media "/media/js/osqa.ask.js" %}" type="text/javascript"></script>
@@ -220,7 +232,7 @@
 				{{ form.tags.help_text }}
 			</p>
 
-	     <div class="form-item">
+	     <!--div class="form-item">
                 <strong>{{ form.defaultrecipients.label_tag }}</strong> <span class="form-error"></span><br/>
                 {{ form.defaultrecipients }}  {{ form.defaultrecipients.errors }}
 
@@ -233,7 +245,7 @@
             </div>
 			<p class="title-desc">
 				{{ form.recipients.help_text }}
-			</p>
+			</p-->
 
             {% if form.recaptcha %}
             <div class="question-captcha" style="float: left">

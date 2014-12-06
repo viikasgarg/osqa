@@ -259,7 +259,7 @@ class BaseModel(models.Model):
 
     def reset_original_state(self, reset_fields=None):
         self._original_state = self._as_dict()
-        
+
         if reset_fields:
             self._original_state.update(dict([(f, None) for f in reset_fields]))
 

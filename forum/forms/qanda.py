@@ -256,8 +256,8 @@ class AskForm(forms.Form):
         super(AskForm, self).__init__(data, *args, **kwargs)
         self.fields['category']   = CategoryNameField(user)
         self.fields['tags']   = TagNamesField(user)
-        self.fields['recipients'] = MailNamesField(user)
-        self.fields['defaultrecipients'] = forms.CharField(label=_('Category Mailing List:'), required=False)
+        #self.fields['recipients'] = MailNamesField(user)
+        #self.fields['defaultrecipients'] = forms.CharField(label=_('Category Mailing List:'), required=False)
        # self.fields['addressbooks'] = AddressBookField(user)
         self.fields['upload_files'] = forms.FileField(required=False,label=_('Upload Files:'),
                                     help_text='Select files to attach')
@@ -352,8 +352,8 @@ class EditQuestionForm(forms.Form):
         self.fields['tags'] = TagNamesField(user)
         self.fields['tags'].initial = revision.tagnames
 
-        self.fields['recipients'] = MailNamesField(user)
-        self.fields['recipients'].initial = revision.recipientnames
+        #self.fields['recipients'] = MailNamesField(user)
+        #self.fields['recipients'].initial = revision.recipientnames
 
 #        self.fields['addressbooks'] = AddressBookField(user)
 #        self.fields['addressbooks'].initial = revision.addressbooks.split(',')

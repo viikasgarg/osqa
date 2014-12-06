@@ -266,11 +266,11 @@ def temp_signin(request, user, code):
     user = get_object_or_404(User, id=user)
 
     if (ValidationHash.objects.validate(code, user, 'templogin', [user.id])):
-        
+
         # If the user requests temp_signin he must have forgotten his password. So we mark it as unusable.
         user.set_unusable_password()
         user.save()
-        
+
         return login_and_forward(request, user, reverse('user_authsettings', kwargs={'id': user.id}),
                                  _(
                                          "You are logged in with a temporary access key, please take the time to fix your issue with authentication."
@@ -301,7 +301,7 @@ def send_validation_email(request):
         messages.info(request, _("A message with an email validation link was just sent to your address."))
         return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
-        
+
 
 def validate_email(request, user, code):
     user = get_object_or_404(User, id=user)

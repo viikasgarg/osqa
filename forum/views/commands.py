@@ -554,11 +554,11 @@ def mark_tag(request, tag=None, **kwargs):#tagging system
 
 def matching_tags(request):
 #    print request
-    if len(request.GET['q']) == 0 or request.GET['q'].strip() == ',':
+    if len(request.GET['term']) == 0 or request.GET['term'].strip() == ',':
 #        raise CommandException(_("Invalid request"))
         possible_tags = Tag.active.all()
     else:
-        possible_tags = Tag.active.filter(name__icontains = request.GET['q'])
+        possible_tags = Tag.active.filter(name__icontains = request.GET['term'])
     tag_output = ''
     for tag in possible_tags:
         tag_output += "%s|%s|%s\n" % (tag.id, tag.name, tag.used_count)
@@ -592,8 +592,9 @@ def category_selected(request):
         data = OsqaCategory.objects.order_by('order_no')[0]          ##if did not find category return default template
 
     response_lst = {'body_template':unicode(data.body_template),
-'notice':unicode(data.notice),
- 'default_recipients':data.get_mail_recipients()}
+'notice':unicode(data.notice)
+ #'default_recipients':data.get_mail_recipients()
+ }
     return HttpResponse(simplejson.dumps(response_lst),
                         mimetype='application/json')
 
@@ -629,7 +630,7 @@ def matching_mails(request):
 
 
 def matching_users(request):
-    if len(request.GET['q']) == 0:
+    if len(request.GET['<q></q>']) == 0:
         raise CommandException(_("Invalid request"))
 
     possible_users = User.objects.filter(username__icontains = request.GET['q'])

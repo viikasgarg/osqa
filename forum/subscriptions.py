@@ -71,6 +71,7 @@ def question_posted(action, new):
     if not question.is_notifiable:
         return
 
+    '''
 ## Mailing List Depending Upon Category
     _recipient_ids = ",".join([category.mail_recipients for category in OsqaCategory.objects.filter(id__in = question.category.split(','))]).split(",")
     recipient_ids =[ recipient.strip()  for recipient in _recipient_ids if recipient.strip() ]
@@ -88,8 +89,8 @@ def question_posted(action, new):
                 all_subscribers = category_subscribers  | mailing_subscribers
         else:
                 all_subscribers = mailing_subscribers
-
-    send_template_email(subscribers, "notifications/newquestion.html", {'question': question})
+    '''
+    send_template_email(all_subscribers, "notifications/newquestion.html", {'question': question})
 
     subscription = QuestionSubscription(question=question, user=question.author)
     subscription.save()
@@ -148,7 +149,7 @@ def revision_posted(action, new):
         'html': revision.html,
         'category':revision.category_name(),
         'tags': revision.tagname_list(),
-        'recipients':revision.recipientname_list(),
+#        'recipients':revision.recipientname_list(),
         }))))
 
         if i > 0:

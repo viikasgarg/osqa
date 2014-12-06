@@ -18,7 +18,7 @@
 		var obj = jQuery.parseJSON(data);
     		document.getElementById("notice").value = data.notice
     		document.getElementById("editor").value = data.body_template
-		document.getElementById("id_defaultrecipients").value = data.default_recipients
+		//document.getElementById("id_defaultrecipients").value = data.default_recipients
         } );
 
 	}
@@ -28,12 +28,17 @@
             $('#editor').TextAreaResizer();
 
             // expanding right block to full screen
-            document.getElementById('CALeft').style.width = "0%";
-            document.getElementById('CARight').style.width = "100%";
+            //document.getElementById('CALeft').style.width = "0%";
+            //document.getElementById('CARight').style.width = "100%";
 
             //Kendo upload initialization
-            kendo_upload_init({{ uploaded_files }},$("#id_upload_files"),$("#id_attachement_token"),"{% url 'upload_attach' %}", "{% url 'delete_attach' %}");
-
+            $("#id_upload_files").kendoUpload({
+                async: {
+                    saveUrl: "{% url 'upload_attach' %}",
+                    removeUrl: "{% url 'delete_attach' %}",
+                    removeField: "{{ uploaded_files }}"
+                }
+            });
 
             //toggle preview of editor
             var display = true;

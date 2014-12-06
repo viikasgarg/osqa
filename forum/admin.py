@@ -21,7 +21,7 @@ from wmd.widgets import WMDWidget
 class CategoryAdmin(admin.ModelAdmin):
     """Category admin class"""
 
-    fields = ('name','order_no','notice','body_template','mail_recipients',)
+    fields = ('name','order_no','notice','body_template',)
     def formfield_for_dbfield(self, db_field, **kwargs):
 #        if db_field.name == 'mail_recipients':
 #           kwargs['widget'] = AutoCompleteInput(search_model=User, token_limit=75,

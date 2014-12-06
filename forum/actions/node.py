@@ -8,7 +8,7 @@ from django.contrib import messages
 
 class NodeEditAction(ActionProxy):
     def create_revision_data(self, initial=False, **data):
-        revision_data = dict(summary=data.get('summary', (initial and _('Initial revision') or '')), body=data['text'])
+        revision_data = dict(summary=data.get('summary', (initial and _('Initial revision') or '')))
 
         if data.get('title', None):
             revision_data['title'] = strip_tags(data['title'].strip())
@@ -19,8 +19,13 @@ class NodeEditAction(ActionProxy):
         if data.get('category', None):
             revision_data['category'] = data['category'].strip()
 
-        if data.get('recipients', None):
-            revision_data['recipientnames'] = data['recipients'].strip()
+        if data.get('text', None):
+            revision_data['body'] = data['text'].strip()
+
+
+
+        #if data.get('recipients', None):
+        #    revision_data['recipientnames'] = data['recipients'].strip()
 
 #        if data.get('addressbooks', None):
 #            revision_data['addressbooks'] = data['addressbooks'].strip()
@@ -40,7 +45,7 @@ class AskAction(NodeEditAction):
         question.save()
         self.node = question
 
-        messages.info(REQUEST_HOLDER.request, self.describe(self.user))
+        #messages.info(REQUEST_HOLDER.request, self.describe(self.user))
 
     def describe(self, viewer=None):
         return _("%(user)s asked %(question)s") % {

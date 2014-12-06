@@ -20,7 +20,7 @@ class NodeContent(models.Model):
     category   = models.CharField(max_length=125)
     title      = models.CharField(max_length=300)
     tagnames   = models.CharField(max_length=125)
-    recipientnames = models.CharField(max_length=300) ##vikas.garg
+    #recipientnames = models.CharField(max_length=300) ##vikas.garg
 
     author     = models.ForeignKey(User, related_name='%(class)ss')
     body       = models.TextField()
@@ -39,12 +39,13 @@ class NodeContent(models.Model):
     @classmethod
     def _as_markdown(cls, content, *extensions):
         try:
+            ## vikas garg TO DO markdown extension
             return mark_safe(sanitize_html(markdown.markdown(content, extensions=extensions)))
         except Exception, e:
             import traceback
             logging.error("Caught exception %s in markdown parser rendering %s %s:\s %s" % (
                 str(e), cls.__name__, str(e), traceback.format_exc()))
-            return ''
+            return content
 
     def as_markdown(self, *extensions):
         return self._as_markdown(smart_unicode(self.body), *extensions)
@@ -72,7 +73,7 @@ class NodeContent(models.Model):
             return [name.strip() for name in self.tagnames.split(",") if name]
         else:
             return []
-
+    '''
     def recipientname_list(self):
         if self.recipientnames:
             names = [name.strip() for name in self.recipientnames.split(",") if name.strip()]
@@ -82,6 +83,7 @@ class NodeContent(models.Model):
             return recipients
         else:
             return []
+    '''
 
 
     def tagname_meta_generator(self):
@@ -395,7 +397,7 @@ class Node(BaseModel, NodeContent):
         self.title = revision.title
         self.category = revision.category
         self.tagnames = revision.tagnames
-        self.recipientnames = revision.recipientnames
+        #self.recipientnames = revision.recipientnames
         self.body = self.rendered(revision.body)
         self.active_revision = revision
 
@@ -406,7 +408,7 @@ class Node(BaseModel, NodeContent):
             update_activity = True
 
             # Do not update the activity if only the tags are changed
-            if prev_revision.title == revision.title and prev_revision.body == revision.body and prev_revision.recipientnames == revision.recipientnames \
+            if prev_revision.title == revision.title and prev_revision.body == revision.body  \
             and prev_revision.tagnames != revision.tagnames and prev_revision.category == revision.category and not settings.UPDATE_LATEST_ACTIVITY_ON_TAG_EDIT:
                 update_activity = False
         except NodeRevision.DoesNotExist:
@@ -470,7 +472,7 @@ class Node(BaseModel, NodeContent):
                 category.save()
            except OsqaCategory.DoesNotExist:
                 pass
- 
+
 
 
         if self.category is not None:
@@ -556,15 +558,15 @@ class Node(BaseModel, NodeContent):
         if not self.id:
             self.node_type = self.get_type()
             super(BaseModel, self).save(*args, **kwargs)
-            self.active_revision = self._create_revision(self.author, 1, title=self.title, tagnames=self.tagnames,recipientnames = self.recipientnames,  body=self.body,category = self.category)
+            self.active_revision = self._create_revision(self.author, 1, title=self.title, tagnames=self.tagnames, body=self.body,category = self.category)
             self.activate_revision(self.author, self.active_revision)
             self.update_last_activity(self.author, time=self.added_at)
 
         if self.parent_id and not self.abs_parent_id:
             self.abs_parent = self.parent.absolute_parent
-        
+
         tags_changed = self._process_changes_in_tags()
-   
+
         if self.node_type == 'question':
                 self._process_changes_in_categories()
         super(Node, self).save(*args, **kwargs)
