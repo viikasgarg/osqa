@@ -26,7 +26,7 @@ $(document).ready(function() {
     var clip = new ZeroClipboard.Client();
 
     // Create the glue when on mouse-over event
-    $('#copy_clip_button').live('mouseover', function() {
+    $('#copy_clip_button').on('mouseover', function() {
         // Take the URL from the input
         clip.setText($('#permanent_link_url').val());
 
@@ -45,7 +45,7 @@ $(document).ready(function() {
     });
 
     // Hide the clip if someone clicks on the cancel button
-    $('.dialog-no').live('click', function() {
+    $('.dialog-no').on('click', function() {
         clip.hide();
     });
 

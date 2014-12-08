@@ -61,7 +61,7 @@
         }
     });
 
-    $('#points_input').live('change keyup', function(evt) {
+    $('#points_input').on('change keyup', function(evt) {
         if ($(this).val() > user_reputation) {
             $(this).attr('value', user_reputation);
         }

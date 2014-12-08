@@ -1721,11 +1721,11 @@ div.comment-tools a:hover {
     left: 0px;
     width: 24px;
     height: 24px;
-    background: url('/forum/m/default/media/images/indicator.gif')
+    background: url('/m/default/media/images/indicator.gif')
 }
 
 #command-loader.success {
-    background: url('/forum/m/default/media/images/vote-accepted-on.png')
+    background: url('/m/default/media/images/vote-accepted-on.png')
 }
 
 .comment-form-buttons {

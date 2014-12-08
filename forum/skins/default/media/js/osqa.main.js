@@ -3,7 +3,13 @@
  * Get the csrftoken cookie and pass it to the X-CSRFToken HTTP request property.
  */
 
-$('html').ajaxSend(function(event, xhr, settings) {
+jQuery.browser = {};
+jQuery.browser.mozilla = /mozilla/.test(navigator.userAgent.toLowerCase()) && !/webkit/.test(navigator.userAgent.toLowerCase());
+jQuery.browser.webkit = /webkit/.test(navigator.userAgent.toLowerCase());
+jQuery.browser.opera = /opera/.test(navigator.userAgent.toLowerCase());
+jQuery.browser.msie = /msie/.test(navigator.userAgent.toLowerCase());
+
+$(document).ajaxSend(function(event, xhr, settings) {
     function getCookie(name) {
         var cookieValue = null;
         if (document.cookie && document.cookie != '') {
@@ -407,7 +413,7 @@ $(function() {
         //alert(comment_box_cursor_position);
     });
     if ($('a.ajax-command').length > 0) {
-        $('a.ajax-command').live('click', function(evt) {
+        $('a.ajax-command').on('click', function(evt) {
             if (running) return false;
 
             var el = $(this);
@@ -593,7 +599,7 @@ $(function() {
                 return false;
             });
 
-            $('#' + $comments_container.attr('id') + ' .comment-edit').live('click', function() {
+            $('#' + $comments_container.attr('id') + ' .comment-edit').on('click', function() {
                 var $link = $(this);
                 var comment_id = /comment-(\d+)-edit/.exec($link.attr('id'))[1];
                 var $comment = $('#comment-' + comment_id);

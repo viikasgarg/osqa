@@ -16,7 +16,7 @@
 <script type="text/javascript">
 $(function() {
 
-    $('#check_for_updates').live('click', function() {
+    $('#check_for_updates').on('click', function() {
         var update_check_url = $(this).attr('href')
         var update_check_status = $('#update_check_status')
         update_check_status.html('{% trans "Checking for updates" %}')

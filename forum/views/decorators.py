@@ -21,7 +21,7 @@ def login_required(func, request, *args, **kwargs):
         return func(request, *args, **kwargs)
 
 def render(template=None, tab=None, tab_title='', weight=500, tabbed=True):
-    def decorator(func):        
+    def decorator(func):
         def decorated(context, request, *args, **kwargs):
             if request.user.is_authenticated():
                 ONLINE_USERS[request.user] = datetime.now()

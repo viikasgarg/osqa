@@ -1,5 +1,5 @@
 $(function() {
-    $('.string_list_widget_button').live('click', function() {
+    $('.string_list_widget_button').on('click', function() {
         $but = $(this);
 
         if ($but.is('.add')) {
@@ -56,7 +56,7 @@ $(function() {
         }
 
         $input.keyup(rewrite_anchor);
-        rewrite_anchor();        
+        rewrite_anchor();
     });
 
     $('#test_email_settings a.test_button').click(function() {

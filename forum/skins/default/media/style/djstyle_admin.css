@@ -9,11 +9,11 @@ input.longstring {
 }
 
 #admin_form tr th {
-    white-space: nowrap;        
+    white-space: nowrap;
 }
 
 #admin_form tr th a {
-    font-size: 80%;        
+    font-size: 80%;
 }
 
 #admin_form tr th .sep {
@@ -57,7 +57,7 @@ input.longstring {
 }
 
 .ajax_indicator {
-    background: transparent url('../images/indicator.gif') top left no-repeat;
+    background: transparent url('/m/default/media/images/indicator.gif') top left no-repeat;
     padding: 7px 25px;
     min-height: 24px;
 }
