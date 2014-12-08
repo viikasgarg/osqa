@@ -5,6 +5,7 @@ from forum.models import Comment, Question, Answer, NodeRevision, OsqaCategory
 import logging
 import re
 from django.contrib import messages
+from forum import REQUEST_HOLDER
 
 class NodeEditAction(ActionProxy):
     def create_revision_data(self, initial=False, **data):
@@ -45,7 +46,7 @@ class AskAction(NodeEditAction):
         question.save()
         self.node = question
 
-        #messages.info(REQUEST_HOLDER.request, self.describe(self.user))
+        messages.info(REQUEST_HOLDER.request, self.describe(self.user))
 
     def describe(self, viewer=None):
         return _("%(user)s asked %(question)s") % {
