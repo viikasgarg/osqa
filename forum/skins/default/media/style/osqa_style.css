@@ -264,7 +264,6 @@ blockquote blockquote {
 }
 
 #nav a:hover {
-    text-decoration: underline;
 	background-color: #98cee1;
 
 }
@@ -290,7 +289,6 @@ blockquote blockquote {
 }
 
 #nav a#nav_ask:hover {
-    text-decoration: underline;
 	background-color: #E5EBF8;
 }
 
