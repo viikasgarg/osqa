@@ -447,7 +447,7 @@ def tags(request):
     })
 
 
-@decorators.render('categories.html', 'categories', _('Categories'), weight=400)
+@decorators.render('categories.html', 'categories', _('Categories'), weight=400, tabbed=False)
 def categories(request):
     categories = OsqaCategory.objects.exclude(id = 5)         ## hiding system Authentication category
     return pagination.paginated(request, ('categories', CategoryPaginatorContext()), {

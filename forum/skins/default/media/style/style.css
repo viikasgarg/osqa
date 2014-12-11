@@ -275,7 +275,7 @@ blockquote blockquote {
 
 #searchBar {
     text-align: center;
-    background-color: #B6C4E2;
+    background-color: #98cee1;
     border-color: #EEEEEC #A9ACA5 #BABDB6 #EEEEEC;
     border-style: solid;
     border-width: 1px;
@@ -621,7 +621,7 @@ a.medal:hover {
 }
 
 .tabsA a {
-    padding: 0 11px;    
+    padding: 0 11px;
 }
 
 .sticky-sort-tabs {

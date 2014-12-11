@@ -38,7 +38,7 @@ def render(template=None, tab=None, tab_title='', weight=500, tabbed=True):
         if tabbed and tab and tab_title:
             ui.register(ui.PAGE_TOP_TABS,
                         ui.PageTab(tab, tab_title, lambda: reverse(func.__name__), weight=weight))
-            
+
         return decorate.result.withfn(decorated, needs_params=True)(func)
 
     return decorator

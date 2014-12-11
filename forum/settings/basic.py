@@ -18,7 +18,7 @@ label = _("Favicon"),
 help_text = _("Your site favicon."),
 widget=ImageFormWidget))
 
-APP_TITLE = Setting('APP_TITLE', u'OSQA: Open Source Q&A Forum', BASIC_SET, dict(
+APP_TITLE = Setting('APP_TITLE', u'Coding Geek\'s Paradise' , BASIC_SET, dict(
 label = _("Application title"),
 help_text = _("The title of your application that will show in the browsers title bar")))
 

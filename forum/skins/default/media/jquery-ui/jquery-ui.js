@@ -10029,13 +10029,13 @@ colors = jQuery.Color.names = {
 	red: "#ff0000",
 	silver: "#c0c0c0",
 	teal: "#008080",
-	white: "#ffffff",
+	white: "#98cee1",
 	yellow: "#ffff00",
 
 	// 4.2.3. "transparent" color keyword
 	transparent: [ null, null, null, 0 ],
 
-	_default: "#ffffff"
+	_default: "#98cee1"
 };
 
 })( jQuery );
