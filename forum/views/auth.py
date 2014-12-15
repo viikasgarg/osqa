@@ -198,7 +198,8 @@ def external_register(request):
 
         provider_class = AUTH_PROVIDERS[auth_provider].consumer
 
-        if provider_class.__class__.__name__ == 'FacebookAuthConsumer':
+        if provider_class.__class__.__name__ == 'FacebookAuthConsumer' or \
+            provider_class.__class__.__name__ == 'googleAuthConsumer':
             user_data = provider_class.get_user_data(request.session['access_token'])
         else:
             user_data = provider_class.get_user_data(request.session['assoc_key'])
