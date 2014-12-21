@@ -15,8 +15,8 @@ import settings
 
 from json import loads as load_json
 
-#settings.GOOGLE_API_KEY =  "225108411153-i28bb8kou45pfpudvc7kq54fqaoetbu6.apps.googleusercontent.com"
-#settings.GOOGLE_APP_SECRET = "QQDrIULVr1ARCYmXqO3aLj32"
+settings.GOOGLE_API_KEY =  "225108411153-i28bb8kou45pfpudvc7kq54fqaoetbu6.apps.googleusercontent.com"
+settings.GOOGLE_APP_SECRET = "QQDrIULVr1ARCYmXqO3aLj32"
 
 class googleAuthConsumer(AuthenticationConsumer):
 

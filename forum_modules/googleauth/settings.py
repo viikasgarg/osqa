@@ -11,7 +11,7 @@ authentication in your site through google.
 """,
 required=False))
 
-GOOGLE_APP_SECRET = Setting('GOOGLE_APP_SECRET', "6RA8sIEw1LY4qL2hV3WN1W5w", EXT_KEYS_SET, dict(
+GOOGLE_APP_SECRET = Setting('GOOGLE_APP_SECRET', "QQDrIULVr1ARCYmXqO3aLj32", EXT_KEYS_SET, dict(
 label = "google APP secret",
 help_text = """
 This your google app secret that you'll get in the same place as the API key.
