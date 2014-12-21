@@ -46,7 +46,7 @@ class AskAction(NodeEditAction):
         question.save()
         self.node = question
 
-        messages.info(REQUEST_HOLDER.request, self.describe(self.user))
+        #messages.info(REQUEST_HOLDER.request, self.describe(self.user))
 
     def describe(self, viewer=None):
         return _("%(user)s asked %(question)s") % {

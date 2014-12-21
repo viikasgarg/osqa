@@ -207,11 +207,6 @@ MODULE_LIST = filter(lambda m: getattr(m, 'CAN_USE', True), [
                           ) for m in MODULE_LIST]
 
 
-
-
-
-
-
 try:
     import south
     #INSTALLED_APPS.append('south')
@@ -231,6 +226,7 @@ if not DEBUG:
         INSTALLED_APPS.append('rosetta')
     except:
         pass
+
 
 AUTHENTICATION_BACKENDS = ['django.contrib.auth.backends.ModelBackend',]
 
