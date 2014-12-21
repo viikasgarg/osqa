@@ -44,7 +44,7 @@ class googleAuthConsumer(AuthenticationConsumer):
 
 
             response = load_json(urlopen("https://www.googleapis.com/oauth2/v3/token", urlencode(args)).read())
-            print response
+            #print response
             access_token = response["access_token"]
 
 
@@ -66,11 +66,11 @@ class googleAuthConsumer(AuthenticationConsumer):
         print "https://content.googleapis.com/plus/v1/people/me?" + urlencode(dict(key=access_token))
         profile = load_json(urlopen("https://content.googleapis.com/plus/v1/people/me?" + urlencode(dict(key=access_token))).read())
 
-        name = profile["displayName"]
+        name = profile.get("displayName","")
 
         # Check whether the length if the email is greater than 75, if it is -- just replace the email
         # with a blank string variable, otherwise we're going to have trouble with the Django model.
-        email = smart_unicode(profile['emails'][0]['value'])
+        email = smart_unicode(profile.get('emails',[{'value':''},])[0]['value'])
         if len(email) > 75:
             email = ''
 
@@ -80,7 +80,7 @@ class googleAuthConsumer(AuthenticationConsumer):
 
         # Return the user data.
         return {
-            'id' : profile['id'],
+            'id' : profile.get('id',''),
             'username': name,
             'email': email,
         }
