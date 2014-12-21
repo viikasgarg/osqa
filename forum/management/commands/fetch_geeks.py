@@ -10,6 +10,7 @@ import re
 import time
 from forum.actions import AskAction
 
+
 categories = {
     #"Home": "http://www.geeksforgeeks.org",
     "Algorithms": "http://www.geeksforgeeks.org/fundamentals-of-algorithms/",
@@ -25,6 +26,7 @@ categories = {
     #"Ask a Q": "http://www.geeksforgeeks.org/contribute/ask-a-question/",
     #"About": "http://www.geeksforgeeks.org/about/",
 }
+
 
 forumcategories= {
     #"Interview Corner": "http://www.geeksforgeeks.org/about/interview-corner/",
@@ -42,6 +44,7 @@ forumcategories= {
     "Graph": "http://www.geeksforgeeks.org/category/graph/"
 }
 
+
 def get_or_create_categories(category):
     categories = OsqaCategory.objects.filter(name=category)
     if len(categories) > 0:
@@ -56,6 +59,7 @@ def get_or_create_categories(category):
         category_obj.save()
         return category_obj.pk
 
+
 def get_tags(tagstring):
     prop = ["of", "in", "to", "for", "with", "on", "at", "from", "by",
             "about", "as", "into", "like", "through", "after",
@@ -67,6 +71,7 @@ def get_tags(tagstring):
     tags = [tag for tag in tagstring.split(" ") if tag not in prop]
     final_tags = [tag for tag in tags if len(tag) >5]
     return ",".join(final_tags)
+
 
 def get_forumpage_links(key, url):
     #url = "http://www.geeksforgeeks.org/fundamentals-of-algorithms/"

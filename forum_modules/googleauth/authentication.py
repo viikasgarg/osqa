@@ -15,6 +15,8 @@ import settings
 
 from json import loads as load_json
 
+#settings.GOOGLE_API_KEY =  "225108411153-i28bb8kou45pfpudvc7kq54fqaoetbu6.apps.googleusercontent.com"
+#settings.GOOGLE_APP_SECRET = "QQDrIULVr1ARCYmXqO3aLj32"
 
 class googleAuthConsumer(AuthenticationConsumer):
 
@@ -42,6 +44,7 @@ class googleAuthConsumer(AuthenticationConsumer):
 
 
             response = load_json(urlopen("https://www.googleapis.com/oauth2/v3/token", urlencode(args)).read())
+            print response
             access_token = response["access_token"]
 
 
@@ -60,7 +63,8 @@ class googleAuthConsumer(AuthenticationConsumer):
 
     def get_user_data(self, access_token):
 #        import pdb; pdb.set_trace()
-        profile = load_json(urlopen("https://www.googleapis.com/plus/v1/people/me?" + urlencode(dict(access_token=access_token))).read())
+        print "https://content.googleapis.com/plus/v1/people/me?" + urlencode(dict(key=access_token))
+        profile = load_json(urlopen("https://content.googleapis.com/plus/v1/people/me?" + urlencode(dict(key=access_token))).read())
 
         name = profile["displayName"]
 
