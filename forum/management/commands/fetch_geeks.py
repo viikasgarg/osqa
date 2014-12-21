@@ -32,7 +32,7 @@ forumcategories= {
     "Bit Magic": "http://www.geeksforgeeks.org/category/bit-magic/",
     "C/C++": "http://www.geeksforgeeks.org/category/c-puzzles/",
     #"Articles": "http://www.geeksforgeeks.org/category/articles/",
-    "GFacts": "http://www.geeksforgeeks.org/category/gfact/",
+    #"GFacts": "http://www.geeksforgeeks.org/category/gfact/",
     "Linked List": "http://www.geeksforgeeks.org/category/linked-list/",
     #"MCQ": "http://www.geeksforgeeks.org/category/multiple-choice-question/",
     "Misc": "http://www.geeksforgeeks.org/category/c-programs/",
