@@ -134,7 +134,7 @@ LANGUAGE_CODE = 'en'
 
 OSQA_DEFAULT_SKIN = 'default'
 
-DISABLED_MODULES = ['books', 'recaptcha', 'project_badges','mysqlfulltext']
+DISABLED_MODULES = ['books', 'project_badges','mysqlfulltext']
 
 STATIC_URL = '/static/'
 STATIC_ROOT = 'staticfiles'
